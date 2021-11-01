@@ -1,0 +1,13 @@
+registry: quay.io
+build_container_image: build
+
+containers:
+  assisted-service-build: Dockerfile.build
+
+volumes:
+  # podman - sharing the podman.socket between the host and the skipper container
+  #- $XDG_RUNTIME_DIR/podman/podman.sock:/run/podman/podman.sock
+  - $HOME/.docker/:$HOME/.docker
+
+env_file:
+ - skipper.env

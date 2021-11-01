@@ -1,0 +1,10 @@
+skipper.yaml
+skipper.env
+venv
+Makefile
+build
+Dockerfile
+Dockerfile.build
+workspace.xml
+utils.sh
+.idea
