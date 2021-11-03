@@ -30,7 +30,8 @@ es_logger.setLevel(logging.WARNING)
 
 
 class ScrapeEvents:
-    def __init__(self, inventory_url: str, offline_token: str, index: str, es_server: str, es_user:str, es_pass:str, backup_destination: str):
+    def __init__(self, inventory_url: str, offline_token: str, index: str, es_server: str, es_user: str,
+                 es_pass: str, backup_destination: str):
 
         self.inventory_url = inventory_url
         self.client = ClientFactory.create_client(url=self.inventory_url, offline_token=offline_token)
@@ -96,7 +97,6 @@ class ScrapeEvents:
 
         self.process_and_log_events(cluster_bash_data, event_list, event_names)
 
-
         if self.does_cluster_needs_full_update(cluster_id, event_list):
             log.info(f"Cluster {cluster_id} logged events are not same as the event count, logging all clusters events")
             self.process_and_log_events(cluster_bash_data, event_list, event_names, False)
@@ -139,12 +139,12 @@ class ScrapeEvents:
             ret = self.log_doc(cluster_bash_data, doc_id)
 
             for key in event:
-                _ = cluster_bash_data.pop(key,None)
+                _ = cluster_bash_data.pop(key, None)
 
             if not ret and only_new_events:
                 break
 
-    def save_new_backup(self,cluster_id, event_list, metadata_json):
+    def save_new_backup(self, cluster_id, event_list, metadata_json):
         cluster_backup_directory_path = os.path.join(self.backup_destination, f"cluster_{cluster_id}")
         if not os.path.exists(cluster_backup_directory_path):
             os.makedirs(cluster_backup_directory_path)
@@ -172,12 +172,14 @@ class ScrapeEvents:
     def get_clusters(self):
         return self.client.clusters_list()
 
+
 def get_no_name_message(event_message: str, event_names: list):
     event_message = re.sub(r"^Host \S+:", "", event_message)
     for name in event_names:
         event_message = event_message.replace(name, "Name")
     event_message = re.sub(UUID_REGEX, "UUID", event_message)
     return event_message
+
 
 def get_cluster_object_names(cluster_bash_data):
     strings_to_remove = list()
@@ -188,18 +190,20 @@ def get_cluster_object_names(cluster_bash_data):
     strings_to_remove.append(cluster_bash_data["cluster"]["name"])
     return strings_to_remove
 
+
 def process_metadata(metadata_json):
     p = process.GetProcessedMetadataJson(metadata_json)
     return p.get_processed_json()
+
 
 def get_doc_id(event_json):
     id_str = event_json["event_time"] + event_json["cluster_id"] + event_json["message"]
     _id = int(hashlib.md5(id_str.encode('utf-8')).hexdigest(), 16)
     return str(_id)
 
+
 def process_event_doc(event_data, cluster_bash_data):
     cluster_bash_data.update(event_data)
-
 
 
 def handle_arguments():
@@ -210,9 +214,11 @@ def handle_arguments():
     parser.add_argument("-eu", "--es_user", help="Elasticsearch user", type=str)
     parser.add_argument("-ep", "--es_pass", help="Elasticsearch password", type=str)
     parser.add_argument("--index", help="Index", type=str)
-    parser.add_argument("--backup-destination", help="Path to save backup, if empty no back up saved", default=None, type=str)
+    parser.add_argument("--backup-destination", help="Path to save backup, if empty no back up saved",
+                        default=None, type=str)
 
     return parser.parse_args()
+
 
 def main():
     args = handle_arguments()
@@ -223,13 +229,14 @@ def main():
                                          offline_token=args.offline_token,
                                          index=args.index,
                                          es_server=args.es_server,
-                                         es_user = args.es_user,
-                                         es_pass = args.es_pass,
+                                         es_user=args.es_user,
+                                         es_pass=args.es_pass,
                                          backup_destination=args.backup_destination)
             scrape_events.run_service()
         except Exception as ex:
             log.warning("Elastefying logs failed with error %s, sleeping for %s and retrying", ex, RETRY_INTERVAL)
             time.sleep(RETRY_INTERVAL)
+
 
 if __name__ == '__main__':
     main()

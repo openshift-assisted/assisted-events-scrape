@@ -1,7 +1,5 @@
-import re
 import json
 import logging
-import collections
 
 REMOVED_FIELDS = [
     "cluster.image_info_ssh_public_key",
@@ -72,8 +70,8 @@ class GetProcessedMetadataJson:
     # Delete a field in string path joind by "."
     def __pop_fields(self, p_json, pop_str):
         if type(p_json) == list:
-            for l in p_json:
-                self.__pop_fields(l, pop_str)
+            for instance in p_json:
+                self.__pop_fields(instance, pop_str)
             return
         pop_list = pop_str.split(".", 1)
         if len(pop_list) == 1:

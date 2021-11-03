@@ -12,3 +12,12 @@ install_assisted_service_client:
 
 build-image:
 	$(CONTAINER_COMMAND) build -t assisted-event-scrap .
+
+##########
+# Verify #
+##########
+
+lint: flake8
+
+flake8:
+	flake8 .
