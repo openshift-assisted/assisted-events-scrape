@@ -6,6 +6,15 @@
 A little service that publishes the [assisted-service](https://github.com/openshift/assisted-service) cluster events to Elasticsearch.
 It pulls all the cluster events and merge it with the existing data.
 
+## Install
+```bash
+make install 
+```
+
+
+## Usage:
+This tool can be used by `events_scrap` cli command (if installed) or running using python without installing  using the command: `python3 -m assisted-events-scrap.events_scrap` 
+
 ### Environment variables
 | Variable    |  Description   | Example    |
 | --- | --- | --- |
