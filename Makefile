@@ -1,4 +1,6 @@
 CONTAINER_COMMAND := $(shell ./utils.sh get_container_runtime_command)
+TAG := $(or ${TAG},latest)
+ASSISTED_EVENTS_SCRAPE_IMAGE := $(or $(ASSISTED_EVENTS_SCRAPE_IMAGE),quay.io/edge-infrastructure/assisted-events-scrape:$(TAG))
 
 install_assisted_service_client:
 	$(eval container_id := $(shell docker create quay.io/ocpmetal/assisted-service))
@@ -11,7 +13,7 @@ install_assisted_service_client:
 	rm -rf build
 
 build-image:
-	$(CONTAINER_COMMAND) build -t assisted-event-scrape .
+	$(CONTAINER_COMMAND) build -t $(ASSISTED_EVENTS_SCRAPE_IMAGE) .
 
 ##########
 # Verify #
