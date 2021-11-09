@@ -12,11 +12,12 @@ import tempfile
 import elasticsearch
 
 from assisted_service_client import rest
+
+from utils import utils
 from ai_client.assisted_service_api import ClientFactory
 from events_scrap import process
 from logger import log
 from contextlib import suppress
-from argparse import ArgumentParser
 
 RETRY_INTERVAL = 60 * 5
 MAX_EVENTS = 5000
@@ -37,7 +38,13 @@ class ScrapeEvents:
         self.client = ClientFactory.create_client(url=self.inventory_url, offline_token=offline_token)
 
         self.index = index
-        self.es = elasticsearch.Elasticsearch(es_server, http_auth=(es_user, es_pass))
+
+        http_auth = None
+
+        if es_user:
+            http_auth = (es_user, es_pass)
+
+        self.es = elasticsearch.Elasticsearch(es_server, http_auth=http_auth)
 
         self.backup_destination = backup_destination
         if self.backup_destination and not os.path.exists(self.backup_destination):
@@ -207,17 +214,15 @@ def process_event_doc(event_data, cluster_bash_data):
 
 
 def handle_arguments():
-    parser = ArgumentParser(description="Elastify events")
-    parser.add_argument("--inventory-url", help="URL of remote inventory", type=str)
-    parser.add_argument("--offline-token", help="offline token", type=str)
-    parser.add_argument("-es", "--es_server", help="Elasticsearch server", type=str)
-    parser.add_argument("-eu", "--es_user", help="Elasticsearch user", type=str)
-    parser.add_argument("-ep", "--es_pass", help="Elasticsearch password", type=str)
-    parser.add_argument("--index", help="Index", type=str)
-    parser.add_argument("--backup-destination", help="Path to save backup, if empty no back up saved",
-                        default=None, type=str)
-
-    return parser.parse_args()
+    return {
+        "inventory_url": utils.get_env("INVENTORY_URL"),
+        "offline_token": utils.get_env("OFFLINE_TOKEN", mandatory=True),
+        "es_server": utils.get_env("ES_SERVER", mandatory=True),
+        "es_user": utils.get_env("ES_USER"),
+        "es_pass": utils.get_env("ES_PASS"),
+        "index": utils.get_env("ES_INDEX", mandatory=True),
+        "backup_destination": utils.get_env("BACKUP_DESTINATION"),
+    }
 
 
 def main():
@@ -225,13 +230,13 @@ def main():
 
     while True:
         try:
-            scrape_events = ScrapeEvents(inventory_url=args.inventory_url,
-                                         offline_token=args.offline_token,
-                                         index=args.index,
-                                         es_server=args.es_server,
-                                         es_user=args.es_user,
-                                         es_pass=args.es_pass,
-                                         backup_destination=args.backup_destination)
+            scrape_events = ScrapeEvents(inventory_url=args["inventory_url"],
+                                         offline_token=args["offline_token"],
+                                         index=args["index"],
+                                         es_server=args["es_server"],
+                                         es_user=args["es_user"],
+                                         es_pass=args["es_pass"],
+                                         backup_destination=args["backup_destination"])
             scrape_events.run_service()
         except Exception as ex:
             log.warning("Elastefying logs failed with error %s, sleeping for %s and retrying", ex, RETRY_INTERVAL)
