@@ -3,17 +3,19 @@ TAG := $(or ${TAG},latest)
 ASSISTED_EVENTS_SCRAPE_IMAGE := $(or $(ASSISTED_EVENTS_SCRAPE_IMAGE),quay.io/edge-infrastructure/assisted-events-scrape:$(TAG))
 
 install_assisted_service_client:
-	$(eval container_id := $(shell docker create quay.io/ocpmetal/assisted-service))
-	rm -rf build/pip/assisted-service-client
-	mkdir -p build/pip/assisted-service-client/
-	docker cp $(container_id):/clients/. build/pip/assisted-service-client/
-	ls -1  build/pip/assisted-service-client/*.tar.gz
-	docker rm -v $(container_id)
-	python3 -m pip install `ls build/pip/assisted-service-client/*`
-	rm -rf build
+	python3 -m pip install assisted-service-client
 
 build-image:
 	$(CONTAINER_COMMAND) build -t $(ASSISTED_EVENTS_SCRAPE_IMAGE) .
+
+build-wheel:
+	rm -rf ./dist ./build
+	python3 -m setup bdist_wheel
+
+install: build-wheel
+	python3 -m pip uninstall assisted_events_scrape -y
+	python3 -m pip install -I dist/assisted_events_scrape-*-py3-none-any.whl
+
 
 ##########
 # Verify #

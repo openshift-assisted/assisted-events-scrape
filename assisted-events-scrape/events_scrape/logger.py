@@ -51,4 +51,4 @@ def add_log_file_handler(filename: str) -> logging.FileHandler:
     return fh
 
 
-add_log_file_handler("test_infra.log")
+add_log_file_handler("assisted-events-scrape.log")

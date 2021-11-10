@@ -12,12 +12,11 @@ import tempfile
 import elasticsearch
 
 from assisted_service_client import rest
-
-from utils import utils
-from ai_client.assisted_service_api import ClientFactory
-from events_scrap import process
-from logger import log
 from contextlib import suppress
+
+from .assisted_service_api import ClientFactory
+from . import process
+from .logger import log
 
 RETRY_INTERVAL = 60 * 5
 MAX_EVENTS = 5000
@@ -36,16 +35,13 @@ class ScrapeEvents:
 
         self.inventory_url = inventory_url
         self.client = ClientFactory.create_client(url=self.inventory_url, offline_token=offline_token)
-
         self.index = index
-
         http_auth = None
 
         if es_user:
             http_auth = (es_user, es_pass)
 
         self.es = elasticsearch.Elasticsearch(es_server, http_auth=http_auth)
-
         self.backup_destination = backup_destination
         if self.backup_destination and not os.path.exists(self.backup_destination):
             os.makedirs(self.backup_destination)
@@ -59,7 +55,7 @@ class ScrapeEvents:
             random.shuffle(clusters)
 
             if not clusters:
-                log.warning(f'No clusters were found, waiting {RETRY_INTERVAL/60} min')
+                log.warning(f'No clusters were found, waiting {RETRY_INTERVAL / 60} min')
                 time.sleep(RETRY_INTERVAL)
                 break
 
@@ -213,15 +209,26 @@ def process_event_doc(event_data, cluster_bash_data):
     cluster_bash_data.update(event_data)
 
 
+def get_env(key, mandatory=False, default=None):
+    res = os.environ.get(key, default)
+
+    if res is not None:
+        res = res.strip()
+    elif mandatory:
+        raise ValueError(f'Mandatory environment variable is missing: {key}')
+
+    return res
+
+
 def handle_arguments():
     return {
-        "inventory_url": utils.get_env("INVENTORY_URL"),
-        "offline_token": utils.get_env("OFFLINE_TOKEN", mandatory=True),
-        "es_server": utils.get_env("ES_SERVER", mandatory=True),
-        "es_user": utils.get_env("ES_USER"),
-        "es_pass": utils.get_env("ES_PASS"),
-        "index": utils.get_env("ES_INDEX", mandatory=True),
-        "backup_destination": utils.get_env("BACKUP_DESTINATION"),
+        "inventory_url": get_env("INVENTORY_URL"),
+        "offline_token": get_env("OFFLINE_TOKEN", mandatory=True),
+        "es_server": get_env("ES_SERVER", mandatory=True),
+        "es_user": get_env("ES_USER"),
+        "es_pass": get_env("ES_PASS"),
+        "index": get_env("ES_INDEX", mandatory=True),
+        "backup_destination": get_env("BACKUP_DESTINATION"),
     }
 
 
@@ -241,7 +248,3 @@ def main():
         except Exception as ex:
             log.warning("Elastefying logs failed with error %s, sleeping for %s and retrying", ex, RETRY_INTERVAL)
             time.sleep(RETRY_INTERVAL)
-
-
-if __name__ == '__main__':
-    main()
