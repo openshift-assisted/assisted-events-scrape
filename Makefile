@@ -13,8 +13,8 @@ build-wheel:
 	python3 -m setup bdist_wheel
 
 install: build-wheel
-	python3 -m pip uninstall assisted_events_scrap -y
-	python3 -m pip install -I dist/assisted_events_scrap-*-py3-none-any.whl
+	python3 -m pip uninstall assisted_events_scrape -y
+	python3 -m pip install -I dist/assisted_events_scrape-*-py3-none-any.whl
 
 
 ##########

@@ -12,18 +12,18 @@ with open(os.path.join(ROOT, "README.md")) as f:
     long_description = f.read()
 
 setuptools.setup(
-    name="assisted-events-scrap",
+    name="assisted-events-scrape",
     setup_requires=["vcversioner"],
     vcversioner={"vcs_args": ["git", "describe", "--tags", "--long"]},
     description="Export your test suites and cases to JUnit report using decorators",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/openshift-assisted/assisted-events-scrap",
+    url="https://github.com/openshift-assisted/assisted-events-scrape",
     author="RedHat",
     author_email="UNKNOWN",
     license="Apache License 2.0",
-    packages=setuptools.find_packages("assisted-events-scrap"),
-    package_dir={"": "assisted-events-scrap"},
+    packages=setuptools.find_packages("assisted-events-scrape"),
+    package_dir={"": "assisted-events-scrape"},
     install_requires=["urllib3>=1.26.7",
                       "elasticsearch>=7.15.1",
                       "requests>=2.26.0",
@@ -33,7 +33,7 @@ setuptools.setup(
                       "assisted-service-client>=1.0.27.1"],
     entry_points={
         'console_scripts': [
-            'events_scrap = events_scrap.events_scrap:main',
+            'events_scrape = events_scrape.events_scrape:main',
         ],
     },
     include_package_data=True,

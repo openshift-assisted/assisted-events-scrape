@@ -13,7 +13,7 @@ make install
 
 
 ## Usage:
-This tool can be used by `events_scrap` cli command (if installed) or running using python without installing  using the command: `python3 -m assisted-events-scrap.events_scrap` 
+This tool can be used by `events_scrape` cli command (if installed) or running using python without installing  using the command: `python3 -m assisted-events-scrape.events_scrape` 
 
 ### Environment variables
 | Variable    |  Description   | Example    |
