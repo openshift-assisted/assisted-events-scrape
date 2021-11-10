@@ -62,7 +62,7 @@ parameters:
 - name: IMAGE_NAME
   value: quay.io/app-sre/assisted-events-scrape
 - name: IMAGE_TAG
-  value: latest
+  value: ''
   required: true
 - name: REPLICAS_COUNT
   value: "1"
