@@ -11,7 +11,7 @@ install_assisted_service_client:
 	rm -rf build
 
 build-image:
-	$(CONTAINER_COMMAND) build -t assisted-event-scrap .
+	$(CONTAINER_COMMAND) build -t assisted-event-scrape .
 
 ##########
 # Verify #
