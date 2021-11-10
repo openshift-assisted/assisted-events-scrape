@@ -36,15 +36,15 @@ objects:
                 key: ASSISTED_SERVICE_URL
                 name: jenkins
           - name: OFFLINE_TOKEN
-              valueFrom:
-                secretKeyRef:
-                  key: OFFLINE_TOKEN_CRED
-                  name: jenkins
+            valueFrom:
+              secretKeyRef:
+                key: OFFLINE_TOKEN_CRED
+                name: jenkins
           - name: ES_SERVER
-              valueFrom:
-                secretKeyRef:
-                  key: endpoint
-                  name: assisted-installer-elasticsearch
+            valueFrom:
+              secretKeyRef:
+                key: endpoint
+                name: assisted-installer-elasticsearch
           - name: ES_INDEX
             value: ${ES_INDEX}
 - apiVersion: policy/v1
