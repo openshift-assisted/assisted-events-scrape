@@ -23,7 +23,6 @@ This tool can be used by `events_scrape` cli command (if installed) or running u
 | `LOGS_DEST`(optional) | Logs path, can be relative, default to the stdout | assisted-events-scrape.log |
 | `ES_USER`(optional)   | Elasticsearch user name | elastic |
 | `ES_PASS`(optional)   | Elasticsearch password  |  |
-| `REMOTE_SERVICE_URL`  | Assisted service url  | https://api.openshift.com |
+| `ASSISTED_SERVICE_URL`| Assisted service url  | https://api.openshift.com |
 | `OFFLINE_TOKEN`       | Assisted service offline token  | |
-| `INVENTORY_URL`       | Assisted service inventory url  | |
 | `BACKUP_DESTINATION`  | Path to save backup, if empty no backups will be saved  | |
