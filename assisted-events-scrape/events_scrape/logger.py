@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 import logging
+import os
 import re
 import sys
-from events_scrape import get_env
 
 
 class SensitiveFormatter(logging.Formatter):
@@ -53,7 +53,7 @@ def add_log_file_handler(filename: str) -> logging.FileHandler:
     return fh
 
 
-log_file = get_env("LOGS_DEST")
+log_file = os.environ.get("LOGS_DEST")
 
 if log_file is not None:
     add_log_file_handler(log_file)
