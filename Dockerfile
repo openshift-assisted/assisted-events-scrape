@@ -5,3 +5,4 @@ RUN dnf update -y && dnf install -y python3 python3-pip && dnf clean all && pyth
 WORKDIR assisted_event_scrape/
 ADD .  ./
 RUN python3 -m pip install -I --no-cache-dir -r requirements.txt vcversioner
+ENTRYPOINT events_scrape
