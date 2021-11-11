@@ -2,6 +2,7 @@
 import logging
 import re
 import sys
+from events_scrape import get_env
 
 
 class SensitiveFormatter(logging.Formatter):
@@ -41,6 +42,7 @@ ch.setFormatter(
         "%(asctime)s %(levelname)-10s - %(thread)d - %(message)s \t" "(%(pathname)s:%(lineno)d)"
     )
 )
+
 log.addHandler(ch)
 
 
@@ -51,4 +53,7 @@ def add_log_file_handler(filename: str) -> logging.FileHandler:
     return fh
 
 
-add_log_file_handler("assisted-events-scrape.log")
+log_file = get_env("LOGS_DEST")
+
+if log_file is not None:
+    add_log_file_handler(log_file)
