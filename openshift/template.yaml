@@ -30,7 +30,7 @@ objects:
               cpu: 300m
               memory: 400Mi
           env:
-          - name: REMOTE_SERVICE_URL
+          - name: ASSISTED_SERVICE_URL
             valueFrom:
               secretKeyRef:
                 key: ASSISTED_SERVICE_URL

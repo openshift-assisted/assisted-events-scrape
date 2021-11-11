@@ -222,7 +222,7 @@ def get_env(key, mandatory=False, default=None):
 
 def handle_arguments():
     return {
-        "inventory_url": get_env("INVENTORY_URL"),
+        "assisted_service_url": get_env("ASSISTED_SERVICE_URL"),
         "offline_token": get_env("OFFLINE_TOKEN", mandatory=True),
         "es_server": get_env("ES_SERVER", mandatory=True),
         "es_user": get_env("ES_USER"),
@@ -237,7 +237,7 @@ def main():
 
     while True:
         try:
-            scrape_events = ScrapeEvents(inventory_url=args["inventory_url"],
+            scrape_events = ScrapeEvents(inventory_url=args["assisted_service_url"],
                                          offline_token=args["offline_token"],
                                          index=args["index"],
                                          es_server=args["es_server"],
