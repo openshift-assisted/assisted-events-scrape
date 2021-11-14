@@ -26,3 +26,5 @@ This tool can be used by `events_scrape` cli command (if installed) or running u
 | `ASSISTED_SERVICE_URL`| Assisted service url  | https://api.openshift.com |
 | `OFFLINE_TOKEN`       | Assisted service offline token  | |
 | `BACKUP_DESTINATION`  | Path to save backup, if empty no backups will be saved  | |
+| `SSO_URL`             | SSO server URL  | |
+

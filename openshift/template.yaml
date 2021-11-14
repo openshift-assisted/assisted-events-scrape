@@ -29,17 +29,10 @@ objects:
             requests:
               cpu: 300m
               memory: 400Mi
+          envFrom:
+            - secretRef:
+                name: events-scrape
           env:
-          - name: ASSISTED_SERVICE_URL
-            valueFrom:
-              secretKeyRef:
-                key: ASSISTED_SERVICE_URL
-                name: jenkins
-          - name: OFFLINE_TOKEN
-            valueFrom:
-              secretKeyRef:
-                key: OFFLINE_TOKEN_CRED
-                name: jenkins
           - name: ES_SERVER
             valueFrom:
               secretKeyRef:
