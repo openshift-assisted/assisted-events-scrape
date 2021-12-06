@@ -8,7 +8,7 @@ export ASSISTED_EVENTS_SCRAPE_IMAGE="${REPO}:${TAG}"
 export CONTAINER_BUILD_EXTRA_PARAMS="--no-cache"
 make build-image
 
-KIBANA_REPO="quay.io/app-sre/kibana"
+KIBANA_REPO="quay.io/app-sre/kibana-oss"
 export KIBANA_IMAGE="${KIBANA_REPO}:7.10.2"
 make build-kibana-image
 
