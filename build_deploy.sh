@@ -12,10 +12,10 @@ KIBANA_REPO="quay.io/app-sre/kibana-oss"
 export KIBANA_IMAGE="${KIBANA_REPO}:7.10.2"
 make build-kibana-image
 
-docker login -u="${QUAY_USER}" -p="${QUAY_TOKEN}" quay.io
+DOCKER_CONF="$PWD/assisted/.docker"
+mkdir -p "$DOCKER_CONF"
+docker --config="$DOCKER_CONF" login -u="${QUAY_USER}" -p="${QUAY_TOKEN}" quay.io
 docker tag "${ASSISTED_EVENTS_SCRAPE_IMAGE}" "${REPO}:latest"
 docker push "${ASSISTED_EVENTS_SCRAPE_IMAGE}"
 docker push "${REPO}:latest"
-
-docker login -u="${QUAY_USER}" -p="${QUAY_TOKEN}" quay.io
 docker push "${KIBANA_IMAGE}"
