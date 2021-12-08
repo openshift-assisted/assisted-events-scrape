@@ -16,4 +16,6 @@ docker login -u="${QUAY_USER}" -p="${QUAY_TOKEN}" quay.io
 docker tag "${ASSISTED_EVENTS_SCRAPE_IMAGE}" "${REPO}:latest"
 docker push "${ASSISTED_EVENTS_SCRAPE_IMAGE}"
 docker push "${REPO}:latest"
+
+docker login -u="${QUAY_USER}" -p="${QUAY_TOKEN}" quay.io
 docker push "${KIBANA_IMAGE}"
