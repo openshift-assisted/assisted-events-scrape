@@ -51,6 +51,53 @@ objects:
     selector:
       matchLabels:
         app: assisted-events-scrape
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    name: kibana
+    labels:
+      app: kibana
+  spec:
+    replicas: 1
+    selector:
+      matchLabels:
+        app: kibana
+    template:
+      metadata:
+        labels:
+          app: kibana
+      spec:
+        containers:
+        - name: kibana
+          image: ${KIBANA_IMAGE}:${KIBANA_TAG}
+          ports:
+          - containerPort: 5601
+          env:
+            - name: ELASTICSEARCH_HOSTS
+                valueFrom:
+                  secretKeyRef:
+                    key: endpoint
+                    name: assisted-installer-elasticsearch
+            - name: ELASTICSEARCH_USERNAME
+              value: ""
+            - name: ELASTICSEARCH_PASSWORD
+              value: ""
+            - name: ELASTICSEARCH_SSL_VERIFICATIONMODE
+              value: none
+
+
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: kibana
+  spec:
+    selector:
+      app: kibana
+    ports:
+      - protocol: TCP
+        port: 5601
+        targetPort: 5601
+
 parameters:
 - name: IMAGE_NAME
   value: quay.io/app-sre/assisted-events-scrape
@@ -61,3 +108,8 @@ parameters:
   value: "1"
 - name: ES_INDEX
   value: ''
+- name: KIBANA_IMAGE
+  value: quay.io/app-sre/kibana-oss
+- name: KIBANA_TAG
+  value: 7.10.2
+
