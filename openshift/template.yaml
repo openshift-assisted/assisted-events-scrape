@@ -74,10 +74,10 @@ objects:
           - containerPort: 5601
           env:
             - name: ELASTICSEARCH_HOSTS
-                valueFrom:
-                  secretKeyRef:
-                    key: endpoint
-                    name: assisted-installer-elasticsearch
+              valueFrom:
+                secretKeyRef:
+                  key: endpoint
+                  name: assisted-installer-elasticsearch
             - name: ELASTICSEARCH_USERNAME
               value: ""
             - name: ELASTICSEARCH_PASSWORD
