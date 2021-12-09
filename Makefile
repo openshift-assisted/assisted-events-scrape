@@ -1,7 +1,8 @@
 CONTAINER_COMMAND := $(shell ./utils.sh get_container_runtime_command)
 TAG := $(or ${TAG},latest)
 ASSISTED_EVENTS_SCRAPE_IMAGE := $(or $(ASSISTED_EVENTS_SCRAPE_IMAGE),quay.io/edge-infrastructure/assisted-events-scrape:$(TAG))
-KIBANA_IMAGE := $(or $(KIBANA_IMAGE),quay.io/edge-infrastructure/kibana:$(TAG))
+KIBANA_TAG := $(or ${KIBANA_TAG},latest)
+KIBANA_IMAGE := $(or $(KIBANA_IMAGE),quay.io/edge-infrastructure/kibana:$(KIBANA_TAG))
 
 install_assisted_service_client:
 	python3 -m pip install assisted-service-client
