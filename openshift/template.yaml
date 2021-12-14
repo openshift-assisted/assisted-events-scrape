@@ -84,8 +84,6 @@ objects:
               value: ""
             - name: ELASTICSEARCH_SSL_VERIFICATIONMODE
               value: none
-
-
 - apiVersion: v1
   kind: Service
   metadata:
@@ -97,6 +95,69 @@ objects:
       - protocol: TCP
         port: 5601
         targetPort: 5601
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    name: kibana-proxy
+    labels:
+      app: kibana-proxy
+  spec:
+    replicas: 1
+    selector:
+      matchLabels:
+        app: kibana-proxy
+    template:
+      metadata:
+        labels:
+          app: kibana-proxy
+      spec:
+        containers:
+        - name: kibana-proxy
+          image: quay.io/oauth2-proxy/oauth2-proxy:v7.2.0
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3000
+              name: http
+              protocol: TCP
+          readinessProbe:
+            failureThreshold: 3
+            periodSeconds: 10
+            successThreshold: 1
+            tcpSocket:
+              port: http
+            timeoutSeconds: 1
+          args: ["--provider", "github", "--http-address", "0.0.0.0:3000", "--https-address", "--github-org", "openshift-assisted", "--show-debug-on-error", "--redirect-url", "http://localhost:3000/oauth2/callback"]
+          env:
+            - name: OAUTH2_PROXY_UPSTREAMS
+              value: http://kibana.assisted-installer-integration.svc:5601
+            - name: OAUTH2_PROXY_EMAIL_DOMAINS
+              value: "*"
+            - name: OAUTH2_PROXY_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  key: CLIENT_ID
+                  name: kibana-oauth-application
+            - name: OAUTH2_PROXY_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  key: CLIENT_SECRET
+                  name: kibana-oauth-application
+            - name: OAUTH2_PROXY_COOKIE_SECRET
+              valueFrom:
+                secretKeyRef:
+                  key: COOKIE_SECRET
+                  name: kibana-oauth-application
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: kibana-proxy
+  spec:
+    selector:
+      app: kibana-proxy
+    ports:
+      - protocol: TCP
+        port: 3000
+        targetPort: 3000
 
 parameters:
 - name: IMAGE_NAME
