@@ -3,6 +3,7 @@ kind: Template
 metadata:
   name: assisted-events-scrape
 objects:
+# Assisted events scrape k8s manifests
 - apiVersion: apps/v1
   kind: Deployment
   metadata:
@@ -51,6 +52,30 @@ objects:
     selector:
       matchLabels:
         app: assisted-events-scrape
+# Kibana manifests
+# Using service account as an Oauth client. read https://access.redhat.com/documentation/en-us/openshift_container_platform/4.2/html/authentication/using-service-accounts-as-oauth-client
+- apiVersion: v1
+  kind: ServiceAccount
+  metadata:
+    annotations:
+      # Ensuring the redirect url will be the kibana route
+      serviceaccounts.openshift.io/oauth-redirectreference.primary: '{"kind":"OAuthRedirectReference","apiVersion":"v1","reference":{"kind":"Route","name":"kibana-proxy"}}'
+    name: kibana
+- apiVersion: v1
+  kind: Service
+  metadata:
+    labels:
+      app: kibana-proxy
+    name: kibana-proxy
+  spec:
+    ports:
+    - port: 3000
+      protocol: TCP
+      targetPort: 3000
+    selector:
+      app: kibana
+    sessionAffinity: None
+    type: ClusterIP
 - apiVersion: apps/v1
   kind: Deployment
   metadata:
@@ -67,6 +92,11 @@ objects:
         labels:
           app: kibana
       spec:
+        volumes:
+          - name: proxy-cookie
+            secret:
+              defaultMode: 420
+              secretName: kibana-oauth-application
         containers:
         - name: kibana
           image: ${KIBANA_IMAGE}:${KIBANA_TAG}
@@ -84,81 +114,39 @@ objects:
               value: ""
             - name: ELASTICSEARCH_SSL_VERIFICATIONMODE
               value: none
-- apiVersion: v1
-  kind: Service
-  metadata:
-    name: kibana
-  spec:
-    selector:
-      app: kibana
-    ports:
-      - protocol: TCP
-        port: 5601
-        targetPort: 5601
-- apiVersion: apps/v1
-  kind: Deployment
-  metadata:
-    name: kibana-proxy
-    labels:
-      app: kibana-proxy
-  spec:
-    replicas: 1
-    selector:
-      matchLabels:
-        app: kibana-proxy
-    template:
-      metadata:
-        labels:
-          app: kibana-proxy
-      spec:
-        containers:
         - name: kibana-proxy
-          image: quay.io/oauth2-proxy/oauth2-proxy:v7.2.0
-          imagePullPolicy: Always
+          image: ${OAUTH_IMAGE}:${OAUTH_IMAGE_TAG}
+          imagePullPolicy: IfNotPresent
           ports:
-            - containerPort: 3000
-              name: http
+            - containerPort: 8443
+              name: https
               protocol: TCP
           readinessProbe:
             failureThreshold: 3
+            httpGet:
+              path: /oauth/healthz
+              port: https
+              scheme: HTTPS
             periodSeconds: 10
             successThreshold: 1
-            tcpSocket:
-              port: http
             timeoutSeconds: 1
-          args: ["--provider", "github", "--http-address", "0.0.0.0:3000", "--https-address", "--github-org", "openshift-assisted", "--show-debug-on-error", "--redirect-url", "http://localhost:3000/oauth2/callback"]
-          env:
-            - name: OAUTH2_PROXY_UPSTREAMS
-              value: http://kibana.assisted-installer-integration.svc:5601
-            - name: OAUTH2_PROXY_EMAIL_DOMAINS
-              value: "*"
-            - name: OAUTH2_PROXY_CLIENT_ID
-              valueFrom:
-                secretKeyRef:
-                  key: CLIENT_ID
-                  name: kibana-oauth-application
-            - name: OAUTH2_PROXY_CLIENT_SECRET
-              valueFrom:
-                secretKeyRef:
-                  key: CLIENT_SECRET
-                  name: kibana-oauth-application
-            - name: OAUTH2_PROXY_COOKIE_SECRET
-              valueFrom:
-                secretKeyRef:
-                  key: COOKIE_SECRET
-                  name: kibana-oauth-application
-- apiVersion: v1
-  kind: Service
-  metadata:
-    name: kibana-proxy
-  spec:
-    selector:
-      app: kibana-proxy
-    ports:
-      - protocol: TCP
-        port: 3000
-        targetPort: 3000
-
+          resources:
+            limits:
+              cpu: 50m
+              memory: 100Mi
+            requests:
+              cpu: 50m
+              memory: 100Mi
+          args:
+            - --http-address=:3000
+            - --provider=openshift
+            - --openshift-service-account=kibana
+            - --cookie-secret-file=/etc/proxy/secrets/session_secret
+            - --upstream=http://localhost:5601
+            - --pass-basic-auth=false
+          volumeMounts:
+            - mountPath: /etc/proxy/secrets
+              name: proxy-cookie
 parameters:
 - name: IMAGE_NAME
   value: quay.io/app-sre/assisted-events-scrape
@@ -173,4 +161,8 @@ parameters:
   value: quay.io/app-sre/kibana-oss
 - name: KIBANA_TAG
   value: 7.10.2
+- name: OAUTH_IMAGE
+  value: quay.io/openshift/origin-oauth-proxy
+- name: OAUTH_IMAGE_TAG
+  value: 4.4.0
 
