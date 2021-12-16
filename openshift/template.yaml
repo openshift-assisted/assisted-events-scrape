@@ -92,6 +92,7 @@ objects:
         labels:
           app: kibana
       spec:
+        serviceAccountName: kibana
         containers:
         - name: kibana
           image: ${KIBANA_IMAGE}:${KIBANA_TAG}
