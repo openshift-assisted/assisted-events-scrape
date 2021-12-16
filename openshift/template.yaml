@@ -60,7 +60,7 @@ objects:
     annotations:
       # Ensuring the redirect url will be the kibana route
       serviceaccounts.openshift.io/oauth-redirectreference.primary: '{"kind":"OAuthRedirectReference","apiVersion":"v1","reference":{"kind":"Route","name":"kibana-proxy"}}'
-    name: kibana
+    name: kibana-proxy
 - apiVersion: v1
   kind: Service
   metadata:
@@ -92,7 +92,7 @@ objects:
         labels:
           app: kibana
       spec:
-        serviceAccountName: kibana
+        serviceAccountName: kibana-proxy
         containers:
         - name: kibana
           image: ${KIBANA_IMAGE}:${KIBANA_TAG}
@@ -136,7 +136,7 @@ objects:
           args:
           - --http-address=0.0.0.0:3000
           - --provider=openshift
-          - --openshift-service-account=kibana
+          - --openshift-service-account=kibana-proxy
           - --upstream=http://localhost:5601
           - --https-address=
           env:
