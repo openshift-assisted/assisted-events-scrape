@@ -92,11 +92,6 @@ objects:
         labels:
           app: kibana
       spec:
-        volumes:
-          - name: proxy-cookie
-            secret:
-              defaultMode: 420
-              secretName: kibana-oauth-application
         containers:
         - name: kibana
           image: ${KIBANA_IMAGE}:${KIBANA_TAG}
@@ -118,15 +113,15 @@ objects:
           image: ${OAUTH_IMAGE}:${OAUTH_IMAGE_TAG}
           imagePullPolicy: IfNotPresent
           ports:
-            - containerPort: 8443
-              name: https
-              protocol: TCP
+          - containerPort: 3000
+            name: http
+            protocol: TCP
           readinessProbe:
             failureThreshold: 3
             httpGet:
               path: /oauth/healthz
-              port: https
-              scheme: HTTPS
+              port: http
+              scheme: HTTP
             periodSeconds: 10
             successThreshold: 1
             timeoutSeconds: 1
@@ -138,15 +133,17 @@ objects:
               cpu: 50m
               memory: 100Mi
           args:
-            - --http-address=:3000
-            - --provider=openshift
-            - --openshift-service-account=kibana
-            - --cookie-secret-file=/etc/proxy/secrets/session_secret
-            - --upstream=http://localhost:5601
-            - --pass-basic-auth=false
-          volumeMounts:
-            - mountPath: /etc/proxy/secrets
-              name: proxy-cookie
+          - --http-address=0.0.0.0:3000
+          - --provider=openshift
+          - --openshift-service-account=kibana
+          - --upstream=http://localhost:5601
+          - --https-address=
+          env:
+          - name: OAUTH2_PROXY_COOKIE_SECRET
+            valueFrom:
+              secretKeyRef:
+                key: session_secret
+                name: kibana-oauth-application
 parameters:
 - name: IMAGE_NAME
   value: quay.io/app-sre/assisted-events-scrape
