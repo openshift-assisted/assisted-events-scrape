@@ -140,7 +140,7 @@ objects:
           - --upstream=http://localhost:5601
           - --https-address=
           - --pass-basic-auth=false
-          - --openshift-sar='{"namespace":"${NAMESPACE}","resource":"services","name":"kibana-proxy","verb":"get"}'
+          - --openshift-sar={"namespace":"${NAMESPACE}","resource":"services","name":"kibana-proxy","verb":"get"}
           env:
           - name: OAUTH2_PROXY_COOKIE_SECRET
             valueFrom:
