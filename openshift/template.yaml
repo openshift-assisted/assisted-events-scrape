@@ -41,6 +41,17 @@ objects:
                 name: assisted-installer-elasticsearch
           - name: ES_INDEX
             value: ${ES_INDEX}
+          - name: ES_USER
+            valueFrom:
+              secretKeyRef:
+                key: master_user_name
+                name: elastic-master-credentials
+          - name: ES_PASS
+            valueFrom:
+              secretKeyRef:
+                key: master_user_password
+                name: elastic-master-credentials
+
 - apiVersion: policy/v1
   kind: PodDisruptionBudget
   metadata:
