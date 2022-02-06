@@ -105,9 +105,15 @@ objects:
                   key: endpoint
                   name: assisted-installer-elasticsearch
             - name: ELASTICSEARCH_USERNAME
-              value: ""
+              valueFrom:
+                secretKeyRef:
+                  key: master_user_name
+                  name: elastic-master-credentials
             - name: ELASTICSEARCH_PASSWORD
-              value: ""
+              valueFrom:
+                secretKeyRef:
+                  key: master_user_password
+                  name: elastic-master-credentials
             - name: ELASTICSEARCH_SSL_VERIFICATIONMODE
               value: none
         - name: kibana-proxy
