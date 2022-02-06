@@ -157,8 +157,12 @@ objects:
           - --upstream=http://localhost:5601
           - --https-address=
           - --pass-basic-auth=false
-          - --openshift-sar={"namespace":"${NAMESPACE}","resource":"services","name":"kibana-proxy","verb":"get"}
+          - --openshift-sar={"namespace":"$(NAMESPACE)","resource":"services","name":"kibana-proxy","verb":"get"}
           env:
+          - name: NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
           - name: OAUTH2_PROXY_COOKIE_SECRET
             valueFrom:
               secretKeyRef:
@@ -182,6 +186,3 @@ parameters:
   value: quay.io/openshift/origin-oauth-proxy
 - name: OAUTH_IMAGE_TAG
   value: 4.4.0
-- name: NAMESPACE
-  value: ''
-
