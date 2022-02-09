@@ -245,6 +245,7 @@ def main():
                                          es_pass=args["es_pass"],
                                          backup_destination=args["backup_destination"])
             scrape_events.run_service()
-        except Exception as ex:
-            log.warning("Elastefying logs failed with error %s, sleeping for %s and retrying", ex, RETRY_INTERVAL)
+        except Exception:
+            log.warning(f'Elastefying events failed with error, sleeping for {RETRY_INTERVAL} and retrying',
+                        exc_info=True)
             time.sleep(RETRY_INTERVAL)
