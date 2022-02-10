@@ -40,7 +40,7 @@ class GetProcessedMetadataJson:
 
     def __set_host_vendor(self):
         for host in self.metadata_json["cluster"]["hosts"]:
-            if "inventory" not in host:
+            if "inventory" not in host or host["inventory"] is None:
                 return
             inventory = json.loads(host["inventory"])
             vendor = inventory.get("system_vendor", None)
