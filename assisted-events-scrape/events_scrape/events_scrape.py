@@ -64,7 +64,15 @@ class ScrapeEvents:
                 cluster_id = cluster["id"]
                 log.info(f"{i}/{cluster_count}: Starting process of cluster {cluster_id}")
                 if "hosts" not in cluster or len(cluster["hosts"]) == 0:
-                    cluster["hosts"] = self.client.get_cluster_hosts(cluster_id=cluster["id"])
+                    try:
+                        cluster["hosts"] = self.client.get_cluster_hosts(cluster_id=cluster["id"])
+                    except rest.ApiException as e:
+                        if e.reason == "Not Found":
+                            log.info(f"Failed to fetch cluster({cluster_id}) events, "
+                                     "probably a deleted cluster - skipping ", exc_info=True)
+                            continue
+                        else:
+                            raise
 
                 self.process_cluster(cluster)
 
@@ -82,7 +90,6 @@ class ScrapeEvents:
         self.elastefy_events(cluster, event_list)
 
     def elastefy_events(self, cluster, event_list):
-
         cluster_id = cluster["id"]
 
         event_count = len(event_list)
