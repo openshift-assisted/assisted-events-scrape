@@ -76,6 +76,9 @@ class ScrapeEvents:
 
                 self.process_cluster(cluster)
 
+            log.info("Finish syncing all clusters - sleeping 30 seconds")
+            time.sleep(30)
+
     def get_metadata_json(self, cluster: dict):
         d = {'cluster': cluster}
         d.update(self.client.get_versions())
