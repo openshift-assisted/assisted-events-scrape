@@ -105,28 +105,6 @@ objects:
       spec:
         serviceAccountName: kibana-proxy
         containers:
-        - name: kibana
-          image: ${KIBANA_IMAGE}:${KIBANA_TAG}
-          ports:
-          - containerPort: 5601
-          env:
-            - name: ELASTICSEARCH_HOSTS
-              valueFrom:
-                secretKeyRef:
-                  key: endpoint
-                  name: assisted-installer-elasticsearch
-            - name: ELASTICSEARCH_USERNAME
-              valueFrom:
-                secretKeyRef:
-                  key: master_user_name
-                  name: elastic-master-credentials
-            - name: ELASTICSEARCH_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  key: master_user_password
-                  name: elastic-master-credentials
-            - name: ELASTICSEARCH_SSL_VERIFICATIONMODE
-              value: none
         - name: kibana-proxy
           image: ${OAUTH_IMAGE}:${OAUTH_IMAGE_TAG}
           imagePullPolicy: IfNotPresent
@@ -154,7 +132,7 @@ objects:
           - --http-address=0.0.0.0:3000
           - --provider=openshift
           - --openshift-service-account=kibana-proxy
-          - --upstream=http://localhost:5601
+          - --upstream=$(KIBANA_ENDPOINT)
           - --https-address=
           - --pass-basic-auth=false
           - --openshift-sar={"namespace":"$(NAMESPACE)","resource":"services","name":"kibana-proxy","verb":"get"}
@@ -163,6 +141,11 @@ objects:
             valueFrom:
               fieldRef:
                 fieldPath: metadata.namespace
+          - name: KIBANA_ENDPOINT
+            valueFrom:
+              secretKeyRef:
+                key: kibana_endpoint
+                name: assisted-installer-elasticsearch
           - name: OAUTH2_PROXY_COOKIE_SECRET
             valueFrom:
               secretKeyRef:
@@ -178,10 +161,6 @@ parameters:
   value: "1"
 - name: ES_INDEX
   value: ''
-- name: KIBANA_IMAGE
-  value: quay.io/app-sre/kibana-oss
-- name: KIBANA_TAG
-  value: 7.10.2
 - name: OAUTH_IMAGE
   value: quay.io/openshift/origin-oauth-proxy
 - name: OAUTH_IMAGE_TAG
