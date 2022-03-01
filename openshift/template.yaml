@@ -151,6 +151,94 @@ objects:
               secretKeyRef:
                 key: session_secret
                 name: kibana-oauth-application
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    name: elasticsearch-exporter
+    labels:
+      app: elasticsearch-exporter
+  spec:
+    replicas: 1
+    selector:
+      matchLabels:
+        app: elasticsearch-exporter
+    template:
+      metadata:
+        labels:
+          app: elasticsearch-exporter
+      spec:
+        serviceAccountName: elasticsearch-exporter
+        containers:
+        - name: elasticsearch-exporter
+          image: ${ES_EXPORTER_IMAGE}:${EX_EXPORTER_IMAGE_TAG}
+          imagePullPolicy: IfNotPresent
+          ports:
+          - containerPort: ${ES_EXPORTER_HTTP_PORT}
+            name: http
+            protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 5
+            timeoutSeconds: 5
+            periodSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 1
+            timeoutSeconds: 5
+            periodSeconds: 5
+          lifecycle:
+            preStop:
+              exec:
+                command: ["/bin/bash", "-c", "sleep 20"]
+          resources:
+            limits:
+              cpu: 50m
+              memory: 100Mi
+            requests:
+              cpu: 50m
+              memory: 100Mi
+          command: ["elasticsearch_exporter",
+                    "--log.format=logfmt",
+                    "--log.level=${ES_EXPORTER_LOGLEVEL}",
+                    "--es.uri=$(ES_SERVER)",
+                    "--es.all",
+                    "--es.indices",
+                    "--es.indices_settings",
+                    "--es.indices_mappings",
+                    "--es.shards",
+                    "--es.snapshots",
+                    "--es.timeout=${ES_EXPORTER_TIMEOUT}",
+                    "--web.listen-address=:${ES_EXPORTER_HTTP_PORT}",
+                    "--web.telemetry-path=${ES_EXPORTER_PATH}"]
+          env:
+          - name: ES_SERVER
+            valueFrom:
+              secretKeyRef:
+                key: endpoint
+                name: assisted-installer-elasticsearch
+- kind: Service
+  apiVersion: v1
+  metadata:
+    name: elasticsearch-exporter
+    labels:
+      app: elasticsearch-exporter
+  spec:
+    type: ClusterIP
+    ports:
+      - name: http
+        port: ${ES_EXPORTER_HTTP_PORT}
+        protocol: TCP
+    selector:
+      app: elasticsearch-exporter
+- apiVersion: v1
+  kind: ServiceAccount
+  metadata:
+    name: elasticsearch-exporter
+
 parameters:
 - name: IMAGE_NAME
   value: quay.io/app-sre/assisted-events-scrape
@@ -165,3 +253,15 @@ parameters:
   value: quay.io/openshift/origin-oauth-proxy
 - name: OAUTH_IMAGE_TAG
   value: 4.4.0
+- name: ES_EXPORTER_IMAGE
+  value: quay.io/prometheuscommunity/elasticsearch-exporter
+- name: EX_EXPORTER_IMAGE_TAG
+  value: v1.3.0
+- name: ES_EXPORTER_LOGLEVEL
+  value: info
+- name: ES_EXPORTER_TIMEOUT
+  value: 30s
+- name: ES_EXPORTER_HTTP_PORT
+  value: "9108"
+- name: ES_EXPORTER_PATH
+  value: /metrics
