@@ -34,6 +34,8 @@ objects:
             - secretRef:
                 name: events-scrape
           env:
+          - name: SENTRY_DSN
+            value: ${SENTRY_DSN}
           - name: ES_SERVER
             valueFrom:
               secretKeyRef:
@@ -165,3 +167,5 @@ parameters:
   value: quay.io/openshift/origin-oauth-proxy
 - name: OAUTH_IMAGE_TAG
   value: 4.4.0
+- name: SENTRY_DSN
+  value: ''

@@ -10,6 +10,8 @@ import logging
 import hashlib
 import tempfile
 import elasticsearch
+import sentry_sdk
+from sentry_sdk import capture_exception
 
 from assisted_service_client import rest
 from contextlib import suppress
@@ -239,11 +241,22 @@ def handle_arguments():
         "es_pass": get_env("ES_PASS"),
         "index": get_env("ES_INDEX", mandatory=True),
         "backup_destination": get_env("BACKUP_DESTINATION"),
+        "sentry_dsn": get_env("SENTRY_DSN", default="")
     }
+
+
+def initSentry(sentry_dsn):
+    if sentry_dsn != "":
+        sentry_sdk.init(
+            sentry_dsn
+        )
+        return True
+    return False
 
 
 def main():
     args = handle_arguments()
+    sentry_enabled = initSentry(args["sentry_dsn"])
 
     while True:
         try:
@@ -255,7 +268,9 @@ def main():
                                          es_pass=args["es_pass"],
                                          backup_destination=args["backup_destination"])
             scrape_events.run_service()
-        except Exception:
+        except Exception as e:
+            if sentry_enabled:
+                capture_exception(e)
             log.warning(f'Elastefying events failed with error, sleeping for {RETRY_INTERVAL} and retrying',
                         exc_info=True)
             time.sleep(RETRY_INTERVAL)
