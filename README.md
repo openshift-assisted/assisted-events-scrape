@@ -18,13 +18,15 @@ This tool can be used by `events_scrape` cli command (if installed) or running u
 ### Environment variables
 | Variable    |  Description   | Example    |
 | --- | --- | --- |
-| `ES_INDEX`            | Elasticsearch index name | assisted-service-events |
-| `ES_SERVER`           | Elasticsearch server address |  |
-| `LOGS_DEST`(optional) | Logs path, can be relative, default to the stdout | assisted-events-scrape.log |
-| `ES_USER`(optional)   | Elasticsearch user name | elastic |
-| `ES_PASS`(optional)   | Elasticsearch password  |  |
-| `ASSISTED_SERVICE_URL`| Assisted service url  | https://api.openshift.com |
-| `OFFLINE_TOKEN`       | Assisted service offline token  | |
-| `BACKUP_DESTINATION`  | Path to save backup, if empty no backups will be saved  | |
-| `SSO_URL`             | SSO server URL  | |
-| `SENTRY_DSN`          | Sentry DSN | |
+| `ES_INDEX`              | Elasticsearch index name | assisted-service-events |
+| `ES_SERVER`             | Elasticsearch server address |  |
+| `LOGS_DEST`(optional)   | Logs path, can be relative, default to the stdout | assisted-events-scrape.log |
+| `ES_USER`(optional)     | Elasticsearch user name | elastic |
+| `ES_PASS`(optional)     | Elasticsearch password  |  |
+| `ASSISTED_SERVICE_URL`  | Assisted service url  | https://api.openshift.com |
+| `OFFLINE_TOKEN`         | Assisted service offline token  | |
+| `BACKUP_DESTINATION`    | Path to save backup, if empty no backups will be saved  | |
+| `SSO_URL`               | SSO server URL  | |
+| `SENTRY_DSN`            | Sentry DSN | |
+| `ERRORS_BEFORE_RESTART` | Maximum numbner of errors allowed before restarting the application | |
+| `MAX_IDLE_MINUTES`      | Minutes allowed for the application to be idle. Idle time is when the application is not being updated, either succesfully or unsuccesfully | |

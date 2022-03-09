@@ -36,6 +36,10 @@ objects:
           env:
           - name: SENTRY_DSN
             value: ${SENTRY_DSN}
+          - name: MAX_IDLE_MINUTES
+            value: ${MAX_IDLE_MINUTES}
+          - name: ERRORS_BEFORE_RESTART
+            value: ${ERRORS_BEFORE_RESTART}
           - name: ES_SERVER
             valueFrom:
               secretKeyRef:
@@ -168,4 +172,8 @@ parameters:
 - name: OAUTH_IMAGE_TAG
   value: 4.4.0
 - name: SENTRY_DSN
+  value: ''
+- name: MAX_IDLE_MINUTES
+  value: ''
+- name: ERRORS_BEFORE_RESTART
   value: ''
