@@ -1,12 +1,13 @@
-import elasticsearch
 import os
 import re
 import time
 import hashlib
 import json
-from utils.logger import log
-import storage.process as process
+import elasticsearch
+from utils import log
+from config import ScraperConfig
 from events_scrape import InventoryClient
+from . import process
 
 MAX_EVENTS = 5000
 UUID_REGEX = r'[a-f0-9]{8}-?[a-f0-9]{4}-?4[a-f0-9]{3}-?[89ab][a-f0-9]{3}-?[a-f0-9]{12}'
@@ -14,31 +15,31 @@ UUID_REGEX = r'[a-f0-9]{8}-?[a-f0-9]{4}-?4[a-f0-9]{3}-?[89ab][a-f0-9]{3}-?[a-f0-
 
 class ClusterEventsStorage:
     @staticmethod
-    def create_with_inventory_client(inventory_client: InventoryClient, config: dict) -> 'ClusterEventsStorage':
-        elastic_config = config["elasticsearch"]
+    def create_with_inventory_client(inventory_client: InventoryClient,
+                                     config: ScraperConfig) -> 'ClusterEventsStorage':
         http_auth = None
-        if elastic_config["username"]:
-            http_auth = (elastic_config["username"], elastic_config["password"])
-        es_client = elasticsearch.Elasticsearch(elastic_config["host"], http_auth=http_auth)
+        if config.elasticsearch.username:
+            http_auth = (config.elasticsearch.username, config.elasticsearch.password)
+        es_client = elasticsearch.Elasticsearch(config.elasticsearch.host, http_auth=http_auth)
         return ClusterEventsStorage(
             inventory_client, es_client,
-            config["backup_destination"], config["inventory_url"], elastic_config["index"])
+            config.backup_destination, config.inventory_url, config.elasticsearch.index)
 
     def __init__(self, assisted_client, es_client, backup_destination, inventory_url, index):
-        self.client = assisted_client
-        self.es_client = es_client
-        self.backup_destination = backup_destination
-        self.inventory_url = inventory_url
-        self.index = index
-        self.cache_event_count_per_cluster = dict()
+        self._client = assisted_client
+        self._es_client = es_client
+        self._back_destination = backup_destination
+        self._inventory_url = inventory_url
+        self._index = index
+        self._cache_event_count_per_cluster = {}
 
     def __get_metadata_json(self, cluster: dict):
         d = {'cluster': cluster}
-        d.update(self.client.get_versions())
+        d.update(self._client.get_versions())
         return d
 
     def __save_new_backup(self, cluster_id, event_list, metadata_json):
-        cluster_backup_directory_path = os.path.join(self.backup_destination, f"cluster_{cluster_id}")
+        cluster_backup_directory_path = os.path.join(self._back_destination, f"cluster_{cluster_id}")
         if not os.path.exists(cluster_backup_directory_path):
             os.makedirs(cluster_backup_directory_path)
 
@@ -60,7 +61,7 @@ class ClusterEventsStorage:
 
         metadata_json = self.__get_metadata_json(cluster)
 
-        if self.backup_destination:
+        if self._back_destination:
             self.__save_new_backup(cluster_id, event_list, metadata_json)
 
         cluster_bash_data = process_metadata(metadata_json)
@@ -79,7 +80,7 @@ class ClusterEventsStorage:
 
             doc_id = get_doc_id(event)
             cluster_bash_data["no_name_message"] = get_no_name_message(event["message"], event_names)
-            cluster_bash_data["inventory_url"] = self.inventory_url
+            cluster_bash_data["inventory_url"] = self._inventory_url
 
             if "props" in event:
                 event["event.props"] = json.loads(event["props"])
@@ -95,30 +96,29 @@ class ClusterEventsStorage:
 
     def does_cluster_needs_full_update(self, cluster_id, event_list):
         # check if cluster is missing past events
-        cluster_events_count = self.cache_event_count_per_cluster.get(cluster_id, None)
+        cluster_events_count = self._cache_event_count_per_cluster.get(cluster_id, None)
         relevant_event_count = len([event for event in event_list if not process.is_event_skippable(event)])
 
         if cluster_events_count and cluster_events_count == relevant_event_count:
             return False
-        else:
-            cluster_events_count_from_db = self.get_cluster_event_count_on_es_db(cluster_id)
-            self.cache_event_count_per_cluster[cluster_id] = cluster_events_count_from_db
+        cluster_events_count_from_db = self.get_cluster_event_count_on_es_db(cluster_id)
+        self._cache_event_count_per_cluster[cluster_id] = cluster_events_count_from_db
+
         if cluster_events_count_from_db < relevant_event_count:
             missing_events = relevant_event_count - cluster_events_count_from_db
             log.info(f"cluster {cluster_id} is missing {missing_events} events")
             return True
-        else:
-            return False
+        return False
 
     def get_cluster_event_count_on_es_db(self, cluster_id):
         time.sleep(1)
-        results = self.es_client.search(index=self.index,
-                                        body={"query": {"match_phrase": {"cluster.id": cluster_id}}})
+        results = self._es_client.search(index=self._index,
+                                         body={"query": {"match_phrase": {"cluster.id": cluster_id}}})
         return results["hits"]["total"]["value"]
 
     def log_doc(self, doc, id_):
         try:
-            res = self.es_client.create(index=self.index, body=doc, id=id_)
+            res = self._es_client.create(index=self._index, body=doc, id=id_)
         except elasticsearch.exceptions.ConflictError:
             log.debug("Hit logged event")
             return None
@@ -134,7 +134,7 @@ def get_no_name_message(event_message: str, event_names: list):
 
 
 def get_cluster_object_names(cluster_bash_data):
-    strings_to_remove = list()
+    strings_to_remove = []
     for host in cluster_bash_data["cluster"]["hosts"]:
         host_name = host.get("requested_hostname", None)
         if host_name:

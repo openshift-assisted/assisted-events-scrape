@@ -5,7 +5,7 @@ from assisted_service_client import rest
 from unittest.mock import Mock
 
 
-class TestClusterRepository():
+class TestClusterRepository:
     def setup(self):
         self.mock_hosts = [
             {"id": "123", "hostname": "foo"},

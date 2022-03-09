@@ -26,7 +26,10 @@ install: build-wheel
 # Verify #
 ##########
 
-lint: flake8
+lint: flake8 pylint
+
+pylint:
+	pylint ./assisted-events-scrape
 
 flake8:
 	flake8 .

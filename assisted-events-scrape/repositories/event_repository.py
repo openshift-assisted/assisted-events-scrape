@@ -7,7 +7,7 @@ from assisted_service_client import rest
 
 class EventRepository:
     def __init__(self, assisted_client):
-        self.client = assisted_client
+        self._client = assisted_client
 
     def get_cluster_events(self, cluster_id: str) -> list:
         with tempfile.NamedTemporaryFile() as temp_event_file:
@@ -18,4 +18,4 @@ class EventRepository:
 
     def write_events_file(self, cluster_id, output_file):
         with suppress(rest.ApiException):
-            self.client.download_cluster_events(cluster_id, output_file, categories=["user", "metrics"])
+            self._client.download_cluster_events(cluster_id, output_file, categories=["user", "metrics"])

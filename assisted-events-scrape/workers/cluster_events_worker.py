@@ -1,40 +1,29 @@
-from threading import Thread
-from repositories import ClusterRepository
-from repositories import EventRepository
+from dataclasses import dataclass
+from repositories import ClusterRepository, EventRepository
+from utils import ErrorCounter, Changes, log
 from storage import ClusterEventsStorage
-from utils import log
 from sentry_sdk import capture_exception
+from config import SentryConfig
 
 
-class ClusterEventsWorker(Thread):
+@dataclass
+class ClusterEventsWorkerConfig:
+    sentry: SentryConfig
+    error_counter: ErrorCounter
+    changes: Changes
 
-    def __init__(self, config: dict, cluster_repository: ClusterRepository,
+
+class ClusterEventsWorker:
+
+    def __init__(self, config: ClusterEventsWorkerConfig, cluster_repository: ClusterRepository,
                  event_repository: EventRepository, cluster_events_storage: ClusterEventsStorage):
 
-        Thread.__init__(self)
-        self.clusters_queue = config["queue"]
-        self.name = config["name"]
         self.cluster_repository = cluster_repository
         self.event_repository = event_repository
         self.cluster_events_storage = cluster_events_storage
-        self.is_sentry_enabled = False
-        if "sentry" in config and "enabled" in config["sentry"]:
-            self.is_sentry_enabled = config["sentry"]["enabled"]
-        self.error_counter = config["error_counter"]
-        self.changes = config["changes"]
-
-    def run(self):
-        while True:
-            self.consume_queue()
-
-    def consume_queue(self):
-        cluster = self.clusters_queue.get()
-        try:
-            log.info(f'Worker {self.name} Processing cluster {cluster["id"]}')
-            self.store_events_for_cluster(cluster)
-            log.info(f'Worker {self.name} stored cluster {cluster["id"]} events')
-        finally:
-            self.clusters_queue.task_done()
+        self.is_sentry_enabled = config.sentry.enabled
+        self.error_counter = config.error_counter
+        self.changes = config.changes
 
     def store_events_for_cluster(self, cluster: dict) -> None:
         try:

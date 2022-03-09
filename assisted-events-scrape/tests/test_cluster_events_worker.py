@@ -1,26 +1,26 @@
 import logging
-from queue import Queue
 from unittest.mock import Mock
-from workers.cluster_events_worker import ClusterEventsWorker
-from utils.counters import ErrorCounter
-from utils.counters import Changes
+from workers import ClusterEventsWorker, ClusterEventsWorkerConfig
+from utils import ErrorCounter, Changes
+from config import SentryConfig
 
 
-class TestClusterEventsWorker():
+class TestClusterEventsWorker:
     def setup(self):
         logging.disable(logging.CRITICAL)
-        self.queue = Queue()
         self.cluster_repo_mock = Mock()
         self.event_repo_mock = Mock()
         self.cluster_events_storage_mock = Mock()
         self.error_counter = ErrorCounter()
         self.changes = Changes()
-        config = {
-            "name": "Test-Worker",
-            "queue": self.queue,
-            "error_counter": self.error_counter,
-            "changes": self.changes
-        }
+        config = ClusterEventsWorkerConfig(
+            SentryConfig(
+                False,
+                ""
+            ),
+            self.error_counter,
+            self.changes
+        )
         self.worker = ClusterEventsWorker(
             config,
             self.cluster_repo_mock,
@@ -93,20 +93,6 @@ class TestClusterEventsWorker():
         cluster = {"id": "abcd", "name": "mycluster", "hosts": []}
 
         self.worker.store_events_for_cluster(cluster)
-
-        self.cluster_repo_mock.get_cluster_hosts.assert_called_once()
-        self.event_repo_mock.get_cluster_events.assert_called_once()
-        self.cluster_events_storage_mock.store.assert_called_once()
-
-        assert 0 == self.error_counter.get_errors()
-        assert self.changes.has_changed_in_last_minutes(1)
-
-    def test_retrieving_events_from_queue(self):
-        cluster = {"id": "abcd", "name": "mycluster"}
-
-        self.queue.put(cluster)
-        self.worker.consume_queue()
-        self.queue.join()
 
         self.cluster_repo_mock.get_cluster_hosts.assert_called_once()
         self.event_repo_mock.get_cluster_events.assert_called_once()

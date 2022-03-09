@@ -3,7 +3,7 @@ from utils.counters import Changes
 from datetime import datetime
 
 
-class TestUtils():
+class TestUtils:
     def test_changes(self):
         changes = Changes()
         today = datetime.today()

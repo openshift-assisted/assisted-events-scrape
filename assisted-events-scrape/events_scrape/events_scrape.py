@@ -3,26 +3,19 @@
 import os
 import sys
 import time
-import urllib3
 import logging
+from concurrent.futures import ThreadPoolExecutor
+import urllib3
 import sentry_sdk
 
-from queue import Queue
-
 from events_scrape import ClientFactory
-from utils import log
-from repositories import ClusterRepository
-from repositories import EventRepository
+from repositories import ClusterRepository, EventRepository
 from storage import ClusterEventsStorage
-from workers import ClusterEventsWorker
-from utils import ErrorCounter
-from utils import Changes
+from workers import ClusterEventsWorker, ClusterEventsWorkerConfig
+from utils import ErrorCounter, Changes, log
+from config import ScraperConfig
 
-RETRY_INTERVAL = 60 * 5
-
-DEFAULT_ENV_ERRORS_BEFORE_RESTART = "100"
-DEFAULT_ENV_MAX_IDLE_MINUTES = "120"
-DEFAULT_ENV_N_WORKERS = "5"
+WAIT_TIME = 60
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -31,96 +24,48 @@ es_logger.setLevel(logging.WARNING)
 
 
 class ScrapeEvents:
-    def __init__(self, config: dict):
-        if config["backup_destination"] and not os.path.exists(config["backup_destination"]):
-            os.makedirs(config["backup_destination"])
+    def __init__(self, config: ScraperConfig):
+        if config.backup_destination and not os.path.exists(config.backup_destination):
+            os.makedirs(config.backup_destination)
 
-        self.client = ClientFactory.create_client(url=config["inventory_url"], offline_token=config["offline_token"])
+        self._client = ClientFactory.create_client(url=config.inventory_url, offline_token=config.offline_token)
+        self._cluster_events_storage = ClusterEventsStorage.create_with_inventory_client(self._client, config)
 
-        self.cluster_events_storage = ClusterEventsStorage.create_with_inventory_client(self.client, config)
+        self._cluster_repo = ClusterRepository(self._client)
+        self._event_repo = EventRepository(self._client)
 
-        self.cluster_repo = ClusterRepository(self.client)
-        self.event_repo = EventRepository(self.client)
-
-        self.init_counters(config)
-        self.start_workers(config)
-
-    def init_counters(self, config: dict) -> None:
-        self.errors_before_restart = config["errors_before_restart"]
-        self.max_idle_minutes = config["max_idle_minutes"]
-        self.changes = Changes()
-        self.error_counter = ErrorCounter()
-
-    def start_workers(self, config: dict) -> None:
-
-        self.clusters_queue = Queue()
-        workers_config = {
-            "queue": self.clusters_queue,
-            "error_counter": self.error_counter,
-            "changes": self.changes,
-            "sentry": config["sentry"]
-        }
-        for n in range(config["n_workers"]):
-            workers_config["name"] = f"Worker-{n}"
-            worker = ClusterEventsWorker(workers_config,
-                                         cluster_repository=self.cluster_repo,
-                                         event_repository=self.event_repo,
-                                         cluster_events_storage=self.cluster_events_storage)
-
-            worker.daemon = True
-            worker.start()
+        self._errors_before_restart = config.errors_before_restart
+        self._max_idle_minutes = config.max_idle_minutes
+        self._changes = Changes()
+        self._error_counter = ErrorCounter()
+        worker_config = ClusterEventsWorkerConfig(
+            config.sentry,
+            self._error_counter,
+            self._changes
+        )
+        self._max_workers = config.n_workers
+        self._worker = ClusterEventsWorker(worker_config, self._cluster_repo, self._event_repo,
+                                           self._cluster_events_storage)
 
     def is_idle(self):
-        return not self.changes.has_changed_in_last_minutes(self.max_idle_minutes)
+        return not self._changes.has_changed_in_last_minutes(self._max_idle_minutes)
 
     def has_too_many_unexpected_errors(self):
-        return self.error_counter.get_errors() > self.errors_before_restart
+        return self._error_counter.get_errors() > self._errors_before_restart
 
     def run_service(self):
-
-        clusters = self.cluster_repo.list_clusters()
+        clusters = self._cluster_repo.list_clusters()
 
         if not clusters:
-            log.warning(f'No clusters were found, waiting {RETRY_INTERVAL / 60} min')
-            time.sleep(RETRY_INTERVAL)
+            log.warning("No clusters were found.")
             return None
-
-        cluster_count = len(clusters)
-        for cluster in clusters:
-            self.clusters_queue.put(cluster)
-        log.info(f"Added {cluster_count} cluster IDs to queue, joining queue...")
-        self.clusters_queue.join()
-        log.info("Finish syncing all clusters - sleeping 30 seconds")
-        time.sleep(30)
-
-
-def get_env(key, mandatory=False, default=None):
-    res = os.environ.get(key, default)
-    if res == "":
-        res = default
-
-    if res is not None:
-        res = res.strip()
-    elif mandatory:
-        raise ValueError(f'Mandatory environment variable is missing: {key}')
-
-    return res
-
-
-def handle_arguments():
-    return {
-        "assisted_service_url": get_env("ASSISTED_SERVICE_URL"),
-        "offline_token": get_env("OFFLINE_TOKEN", mandatory=True),
-        "es_server": get_env("ES_SERVER", mandatory=True),
-        "es_user": get_env("ES_USER"),
-        "es_pass": get_env("ES_PASS"),
-        "index": get_env("ES_INDEX", mandatory=True),
-        "backup_destination": get_env("BACKUP_DESTINATION"),
-        "sentry_dsn": get_env("SENTRY_DSN", default=""),
-        "max_idle_minutes": get_env("MAX_IDLE_MINUTES", default=DEFAULT_ENV_MAX_IDLE_MINUTES),
-        "errors_before_restart": get_env("ERRORS_BEFORE_RESTART", default=DEFAULT_ENV_ERRORS_BEFORE_RESTART),
-        "n_workers": get_env("N_WORKERS", default=DEFAULT_ENV_N_WORKERS)
-    }
+        with ThreadPoolExecutor(max_workers=self._max_workers) as executor:
+            cluster_count = len(clusters)
+            for cluster in clusters:
+                executor.submit(self._worker.store_events_for_cluster, cluster)
+            log.info(f"Sent {cluster_count} clusters for processing...")
+            executor.shutdown(wait=True)
+        log.info("Finish syncing all clusters")
 
 
 def init_sentry(sentry_dsn):
@@ -133,26 +78,9 @@ def init_sentry(sentry_dsn):
 
 
 def main():
-    args = handle_arguments()
-    is_sentry_enabled = init_sentry(args["sentry_dsn"])
+    config = ScraperConfig.create_from_env()
+    config.sentry.enabled = init_sentry(config.sentry.sentry_dsn)
 
-    config = {
-        "inventory_url": args["assisted_service_url"],
-        "backup_destination": args["backup_destination"],
-        "offline_token": args["offline_token"],
-        "sentry": {
-            "enabled": is_sentry_enabled,
-        },
-        "elasticsearch": {
-            "host": args["es_server"],
-            "index": args["index"],
-            "username": args["es_user"],
-            "password": args["es_pass"],
-        },
-        "max_idle_minutes": int(args["max_idle_minutes"]),
-        "errors_before_restart": int(args["errors_before_restart"]),
-        "n_workers": int(args["n_workers"])
-    }
     scrape_events = ScrapeEvents(config)
 
     should_run = True
@@ -165,5 +93,6 @@ def main():
         if scrape_events.has_too_many_unexpected_errors():
             log.Error("Too many unexpected errors, exiting")
             should_run = False
-
+        log.info(f"Waiting {WAIT_TIME} seconds")
+        time.sleep(WAIT_TIME)
     sys.exit(1)

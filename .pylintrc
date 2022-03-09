@@ -1,0 +1,10 @@
+#https://pylint.pycqa.org/en/latest/technical_reference/features.html
+
+[FORMAT]
+max-line-length=120
+max-args=6
+min-public-methods=1
+
+[MESSAGE CONTROL]
+disable=missing-class-docstring,missing-function-docstring,missing-module-docstring,fixme,invalid-name,broad-except,import-error,useless-object-inheritance,no-member,inconsistent-return-statements,unspecified-encoding,too-many-public-methods,too-many-instance-attributes,unidiomatic-typecheck
+enable=superfluous-parens,class-naming-style,inherit-non-class
