@@ -30,3 +30,8 @@ lint: flake8
 
 flake8:
 	flake8 .
+
+test: lint unit-test
+
+unit-test:
+	pytest

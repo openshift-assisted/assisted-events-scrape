@@ -40,6 +40,8 @@ objects:
             value: ${MAX_IDLE_MINUTES}
           - name: ERRORS_BEFORE_RESTART
             value: ${ERRORS_BEFORE_RESTART}
+          - name: N_WORKERS
+            value: ${N_WORKERS}
           - name: ES_SERVER
             valueFrom:
               secretKeyRef:
@@ -166,7 +168,7 @@ parameters:
 - name: REPLICAS_COUNT
   value: "1"
 - name: ES_INDEX
-  value: ''
+  value: 'assisted-service-events'
 - name: OAUTH_IMAGE
   value: quay.io/openshift/origin-oauth-proxy
 - name: OAUTH_IMAGE_TAG
@@ -177,3 +179,5 @@ parameters:
   value: '120'
 - name: ERRORS_BEFORE_RESTART
   value: '100'
+- name: N_WORKERS
+  value: '5'

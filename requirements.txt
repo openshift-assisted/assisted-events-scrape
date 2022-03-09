@@ -10,3 +10,4 @@ python-json-logger~=2.0
 flake8
 pylint
 wheel
+pytest
