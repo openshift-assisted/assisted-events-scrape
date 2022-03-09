@@ -11,6 +11,9 @@ import hashlib
 import tempfile
 import elasticsearch
 import sentry_sdk
+from datetime import datetime
+from datetime import timedelta
+
 from sentry_sdk import capture_exception
 
 from assisted_service_client import rest
@@ -22,6 +25,8 @@ from .logger import log
 
 RETRY_INTERVAL = 60 * 5
 MAX_EVENTS = 5000
+DEFAULT_ENV_MAX_ERRORS = "100"
+DEFAULT_ENV_MAX_IDLE_MINUTES = "120"
 
 UUID_REGEX = r'[a-f0-9]{8}-?[a-f0-9]{4}-?4[a-f0-9]{3}-?[89ab][a-f0-9]{3}-?[a-f0-9]{12}'
 
@@ -33,8 +38,10 @@ es_logger.setLevel(logging.WARNING)
 
 class ScrapeEvents:
     def __init__(self, inventory_url: str, offline_token: str, index: str, es_server: str, es_user: str,
-                 es_pass: str, backup_destination: str):
+                 es_pass: str, backup_destination: str, is_sentry_enabled: bool, max_idle_minutes: int,
+                 max_errors: int):
 
+        self.latest_update = datetime.now()
         self.inventory_url = inventory_url
         self.client = ClientFactory.create_client(url=self.inventory_url, offline_token=offline_token)
         self.index = index
@@ -49,6 +56,22 @@ class ScrapeEvents:
             os.makedirs(self.backup_destination)
 
         self.cache_event_count_per_cluster = dict()
+        self.is_sentry_enabled = is_sentry_enabled
+        self.max_idle_minutes = max_idle_minutes
+        self.max_errors = max_errors
+        self.error_count = 0
+
+    def is_idle(self):
+        return datetime.now() > (self.latest_update + timedelta(minutes=self.max_idle_minutes))
+
+    def has_too_many_unexpected_errors(self):
+        return self.error_count > self.max_errors
+
+    def handle_unexpected_error(self, e: Exception, msg: str):
+        self.error_count += 1
+        if self.is_sentry_enabled:
+            capture_exception(e)
+        log.exception(msg)
 
     def run_service(self):
 
@@ -65,21 +88,28 @@ class ScrapeEvents:
             for i, cluster in enumerate(clusters):
                 cluster_id = cluster["id"]
                 log.info(f"{i}/{cluster_count}: Starting process of cluster {cluster_id}")
-                if "hosts" not in cluster or len(cluster["hosts"]) == 0:
-                    try:
-                        cluster["hosts"] = self.client.get_cluster_hosts(cluster_id=cluster["id"])
-                    except rest.ApiException as e:
-                        if e.reason == "Not Found":
-                            log.info(f"Failed to fetch cluster({cluster_id}) events, "
-                                     "probably a deleted cluster - skipping ", exc_info=True)
-                            continue
-                        else:
-                            raise
-
-                self.process_cluster(cluster)
+                try:
+                    cluster["hosts"] = self.fetch_hosts(cluster)
+                    if len(cluster["hosts"]) > 0:
+                        self.process_cluster(cluster)
+                except Exception as e:
+                    self.handle_unexpected_error(e, f'Error while processing cluster {cluster_id}')
 
             log.info("Finish syncing all clusters - sleeping 30 seconds")
             time.sleep(30)
+
+    def fetch_hosts(self, cluster):
+        cluster_id = cluster["id"]
+        hosts = []
+        if "hosts" not in cluster or len(cluster["hosts"]) == 0:
+            try:
+                hosts = self.client.get_cluster_hosts(cluster_id=cluster_id)
+            except rest.ApiException as e:
+                if e.reason != "Not Found":
+                    raise
+                log.info(f"Failed to fetch cluster({cluster_id}) events, "
+                         "probably a deleted cluster - skipping ", exc_info=True)
+        return hosts
 
     def get_metadata_json(self, cluster: dict):
         d = {'cluster': cluster}
@@ -93,6 +123,7 @@ class ScrapeEvents:
                 event_list = json.load(f)
 
         self.elastefy_events(cluster, event_list)
+        self.latest_update = datetime.now()
 
     def elastefy_events(self, cluster, event_list):
         cluster_id = cluster["id"]
@@ -241,7 +272,9 @@ def handle_arguments():
         "es_pass": get_env("ES_PASS"),
         "index": get_env("ES_INDEX", mandatory=True),
         "backup_destination": get_env("BACKUP_DESTINATION"),
-        "sentry_dsn": get_env("SENTRY_DSN", default="")
+        "sentry_dsn": get_env("SENTRY_DSN", default=""),
+        "max_idle_minutes": get_env("MAX_IDLE_MINUTES", default=DEFAULT_ENV_MAX_IDLE_MINUTES),
+        "max_errors": get_env("MAX_ERRORS", default=DEFAULT_ENV_MAX_ERRORS)
     }
 
 
@@ -256,21 +289,19 @@ def initSentry(sentry_dsn):
 
 def main():
     args = handle_arguments()
-    sentry_enabled = initSentry(args["sentry_dsn"])
+    is_sentry_enabled = initSentry(args["sentry_dsn"])
+    should_run = True
+    while should_run:
+        scrape_events = ScrapeEvents(inventory_url=args["assisted_service_url"],
+                                     offline_token=args["offline_token"],
+                                     index=args["index"],
+                                     es_server=args["es_server"],
+                                     es_user=args["es_user"],
+                                     es_pass=args["es_pass"],
+                                     backup_destination=args["backup_destination"],
+                                     is_sentry_enabled=is_sentry_enabled,
+                                     max_idle_minutes=int(args["max_idle_minutes"]),
+                                     max_errors=int(args["max_errors"]))
 
-    while True:
-        try:
-            scrape_events = ScrapeEvents(inventory_url=args["assisted_service_url"],
-                                         offline_token=args["offline_token"],
-                                         index=args["index"],
-                                         es_server=args["es_server"],
-                                         es_user=args["es_user"],
-                                         es_pass=args["es_pass"],
-                                         backup_destination=args["backup_destination"])
-            scrape_events.run_service()
-        except Exception as e:
-            if sentry_enabled:
-                capture_exception(e)
-            log.warning(f'Elastefying events failed with error, sleeping for {RETRY_INTERVAL} and retrying',
-                        exc_info=True)
-            time.sleep(RETRY_INTERVAL)
+        scrape_events.run_service()
+        should_run = scrape_events.is_idle() or scrape_events.has_too_many_unexpected_errors()
