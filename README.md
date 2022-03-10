@@ -27,4 +27,4 @@ This tool can be used by `events_scrape` cli command (if installed) or running u
 | `OFFLINE_TOKEN`       | Assisted service offline token  | |
 | `BACKUP_DESTINATION`  | Path to save backup, if empty no backups will be saved  | |
 | `SSO_URL`             | SSO server URL  | |
-
+| `SENTRY_DSN`          | Sentry DSN | |
