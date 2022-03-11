@@ -17,7 +17,7 @@ from kubernetes.config.kube_config import Configuration as KubeConfiguration
 from retry import retry
 from urllib3 import HTTPResponse
 
-from .logger import log
+from utils.logger import log
 
 MINUTE = 60
 WAIT_FOR_BM_API = 15 * MINUTE

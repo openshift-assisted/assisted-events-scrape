@@ -30,3 +30,6 @@ lint: flake8
 
 flake8:
 	flake8 .
+
+test:
+	nosetests tests

@@ -9,3 +9,4 @@ sentry-sdk~=1.5
 flake8
 pylint
 wheel
+nose
