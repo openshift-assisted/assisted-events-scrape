@@ -174,6 +174,6 @@ parameters:
 - name: SENTRY_DSN
   value: ''
 - name: MAX_IDLE_MINUTES
-  value: ''
+  value: '120'
 - name: ERRORS_BEFORE_RESTART
-  value: ''
+  value: '100'
