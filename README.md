@@ -20,7 +20,6 @@ This tool can be used by `events_scrape` cli command (if installed) or running u
 | --- | --- | --- |
 | `ES_INDEX`              | Elasticsearch index name | assisted-service-events |
 | `ES_SERVER`             | Elasticsearch server address |  |
-| `LOGS_DEST`(optional)   | Logs path, can be relative, default to the stdout | assisted-events-scrape.log |
 | `ES_USER`(optional)     | Elasticsearch user name | elastic |
 | `ES_PASS`(optional)     | Elasticsearch password  |  |
 | `ASSISTED_SERVICE_URL`  | Assisted service url  | https://api.openshift.com |

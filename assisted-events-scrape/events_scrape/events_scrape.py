@@ -162,7 +162,7 @@ class ScrapeEvents:
             self.cache_event_count_per_cluster[cluster_id] = cluster_events_count_from_db
         if cluster_events_count_from_db < relevant_event_count:
             missing_events = relevant_event_count - cluster_events_count_from_db
-            logging.info(f"cluster {cluster_id} is missing {missing_events} events")
+            log.info(f"cluster {cluster_id} is missing {missing_events} events")
             return True
         else:
             return False
