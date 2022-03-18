@@ -157,6 +157,77 @@ objects:
               secretKeyRef:
                 key: session_secret
                 name: kibana-oauth-application
+- apiVersion: batch/v1
+  kind: Job
+  metadata:
+    name: load-historical-data
+    labels:
+      app: import-migration
+  spec:
+    template:
+      spec:
+        containers:
+        - name: elastic-dump
+          image: elasticdump/elasticsearch-dump:v6.81.0
+          command:
+          - "bash"
+          args:
+          - "-c"
+          - "export ELASTIC_AUTH_HEADERS=$(/tmp/generate_auth_headers); elasticdump --s3AccessKeyId $(AWS_ACCESS_KEY_ID) --s3SecretAccessKey $(AWS_SECRET_ACCESS_KEY) --input=s3://$(AWS_S3_BUCKET)/migration_$(MIGRATION_INDEX).json --output=\"$(ELASTIC_HOST)/restored_${MIGRATION_INDEX}\" --output-headers=\"${ELASTIC_AUTH_HEADERS}\" --concurrency=20 --limit=250 --debug=true"
+          env:
+          - name: ELASTIC_HOST
+            valueFrom:
+              secretKeyRef:
+                key: endpoint
+                name: assisted-installer-elasticsearch
+          - name: MIGRATION_INDEX
+            value: ${MIGRATION_INDEX}
+          - name: AWS_ACCESS_KEY_ID
+            valueFrom:
+              secretKeyRef:
+                key: aws_access_key_id
+                name: assisted-installer-s3-migration
+          - name: AWS_SECRET_ACCESS_KEY
+            valueFrom:
+              secretKeyRef:
+                key: aws_secret_access_key
+                name: assisted-installer-s3-migration
+          - name: AWS_S3_BUCKET
+            valueFrom:
+              secretKeyRef:
+                key: bucket
+                name: assisted-installer-s3-migration
+          - name: ELASTIC_USER
+            valueFrom:
+              secretKeyRef:
+                key: master_user_name
+                name: elastic-master-credentials
+          - name: ELASTIC_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                key: master_user_password
+                name: elastic-master-credentials
+          volumeMounts:
+          - mountPath: /tmp
+            name: migration-scripts
+        restartPolicy: Never
+        volumes:
+        - configMap:
+            defaultMode: 0770
+            name: migration-scripts
+          name: migration-scripts
+    backoffLimit: 1
+- apiVersion: v1
+  kind: ConfigMap
+  metadata:
+    name: migration-scripts
+    namespace: assisted-installer-integration
+  data:
+    generate_auth_headers: |-
+      #!/bin/bash
+      base64_credentials=$(echo -n "${ELASTIC_USER}:${ELASTIC_PASSWORD}" | base64 -w0)
+      echo -n '{"Authorization": "Basic '${base64_credentials}'"}'
+
 parameters:
 - name: IMAGE_NAME
   value: quay.io/app-sre/assisted-events-scrape
@@ -177,3 +248,5 @@ parameters:
   value: '120'
 - name: ERRORS_BEFORE_RESTART
   value: '100'
+- name: MIGRATION_INDEX
+  value: "assisted-service-events"
