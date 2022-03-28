@@ -29,3 +29,4 @@ This tool can be used by `events_scrape` cli command (if installed) or running u
 | `SENTRY_DSN`            | Sentry DSN | |
 | `ERRORS_BEFORE_RESTART` | Maximum numbner of errors allowed before restarting the application | |
 | `MAX_IDLE_MINUTES`      | Minutes allowed for the application to be idle. Idle time is when the application is not being updated, either succesfully or unsuccesfully | |
+| `N_WORKERS`             | Number of workers in the thread pool. Defaults to 5 - minimum 1. | |
