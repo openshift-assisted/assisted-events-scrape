@@ -30,3 +30,18 @@ This tool can be used by `events_scrape` cli command (if installed) or running u
 | `ERRORS_BEFORE_RESTART` | Maximum numbner of errors allowed before restarting the application | |
 | `MAX_IDLE_MINUTES`      | Minutes allowed for the application to be idle. Idle time is when the application is not being updated, either succesfully or unsuccesfully | |
 | `N_WORKERS`             | Number of workers in the thread pool. Defaults to 5 - minimum 1. | |
+
+
+### OAuth Proxy Configuration
+
+In order to proxy elasticsearch/kibana, we use [OAuth Proxy](https://github.com/openshift/oauth-proxy) to provide authentication layer.
+
+Below we describe the options that are used:
+
+
+- `-http-address` The binding address.
+- `-provider` OAuth provider. We use `openshift`
+- `-openshift-service-account` Service account where `client-id` and `client-secret` will be read from
+- `-openshift-sar` [JSON Subject Access Review](https://github.com/openshift/oauth-proxy#require-specific-permissions-to-login-via-oauth-with---openshift-sarjson)
+- `-pass-basic-auth` We turn this option off: we just want to proxy provided Basic Auth headers, and not pass authorized user as user
+- `-htpasswd-file` htpasswd file path used for authorizing system users
