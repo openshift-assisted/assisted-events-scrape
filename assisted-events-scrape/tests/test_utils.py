@@ -1,6 +1,5 @@
-from utils.counters import ErrorCounter
-from utils.counters import Changes
 from datetime import datetime
+from utils import ErrorCounter, Changes
 
 
 class TestUtils:

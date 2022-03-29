@@ -14,6 +14,7 @@ class TestClusterEventsWorker:
         self.error_counter = ErrorCounter()
         self.changes = Changes()
         config = ClusterEventsWorkerConfig(
+            1,
             SentryConfig(
                 False,
                 ""
@@ -93,6 +94,18 @@ class TestClusterEventsWorker:
         cluster = {"id": "abcd", "name": "mycluster", "hosts": []}
 
         self.worker.store_events_for_cluster(cluster)
+
+        self.cluster_repo_mock.get_cluster_hosts.assert_called_once()
+        self.event_repo_mock.get_cluster_events.assert_called_once()
+        self.cluster_events_storage_mock.store.assert_called_once()
+
+        assert 0 == self.error_counter.get_errors()
+        assert self.changes.has_changed_in_last_minutes(1)
+
+    def test_process_clusters(self):
+        clusters = [{"id": "abcd", "name": "mycluster", "hosts": []}]
+
+        self.worker.process_clusters(clusters)
 
         self.cluster_repo_mock.get_cluster_hosts.assert_called_once()
         self.event_repo_mock.get_cluster_events.assert_called_once()
