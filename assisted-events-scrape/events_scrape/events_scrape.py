@@ -88,10 +88,10 @@ def main():
         scrape_events.run_service()
 
         if scrape_events.is_idle():
-            log.Error("Scraping is idle, exiting...")
+            log.error("Scraping is idle, exiting...")
             should_run = False
         if scrape_events.has_too_many_unexpected_errors():
-            log.Error("Too many unexpected errors, exiting")
+            log.error("Too many unexpected errors, exiting")
             should_run = False
         log.info(f"Waiting {WAIT_TIME} seconds")
         time.sleep(WAIT_TIME)
