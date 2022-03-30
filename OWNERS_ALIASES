@@ -2,28 +2,10 @@
 
 aliases:
   code-reviewers:
-    - michaellevy101
-    - avishayt
-    - empovit
-    - eranco74
-    - ori-amizur
-    - tsorya
-    - yevgeny-shnaidman
-    - masayag
-    - carbonin
-    - rollandf
-    - danielerez
-    - ybettan
-    - slaviered
-    - asalkeld
   code-approvers:
+    - adriengentil
+    - rccrdpccl
     - michaellevy101
-    - mkowalski
-    - romfreiman
-    - celebdor
-    - filanov
     - gamli75
     - osherdp
-    - oshercc
-    - omertuc
     - eliorerz
