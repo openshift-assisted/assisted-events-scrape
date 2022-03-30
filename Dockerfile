@@ -1,5 +1,3 @@
-FROM quay.io/edge-infrastructure/assisted-service:latest AS service
-
 FROM registry.access.redhat.com/ubi8/ubi-minimal:8.5
 
 RUN microdnf update -y && microdnf install -y python3 python3-pip && microdnf clean all && python3 -m pip install --upgrade pip
