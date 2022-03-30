@@ -1,4 +1,7 @@
 from dataclasses import dataclass
+from typing import List
+import queue
+from concurrent.futures import ThreadPoolExecutor
 from repositories import ClusterRepository, EventRepository
 from utils import ErrorCounter, Changes, log
 from storage import ClusterEventsStorage
@@ -8,6 +11,7 @@ from config import SentryConfig
 
 @dataclass
 class ClusterEventsWorkerConfig:
+    max_workers: int
     sentry: SentryConfig
     error_counter: ErrorCounter
     changes: Changes
@@ -21,9 +25,15 @@ class ClusterEventsWorker:
         self.cluster_repository = cluster_repository
         self.event_repository = event_repository
         self.cluster_events_storage = cluster_events_storage
-        self.is_sentry_enabled = config.sentry.enabled
-        self.error_counter = config.error_counter
-        self.changes = config.changes
+        self._config = config
+        self._executor = None
+
+    def process_clusters(self, clusters: List[dict]) -> None:
+        with ThreadPoolExecutor(max_workers=self._config.max_workers) as self._executor:
+            cluster_count = len(clusters)
+            for cluster in clusters:
+                self._executor.submit(self.store_events_for_cluster, cluster)
+            log.info(f"Sent {cluster_count} clusters for processing...")
 
     def store_events_for_cluster(self, cluster: dict) -> None:
         try:
@@ -31,12 +41,31 @@ class ClusterEventsWorker:
                 cluster["hosts"] = self.cluster_repository.get_cluster_hosts(cluster["id"])
             events = self.event_repository.get_cluster_events(cluster["id"])
             self.cluster_events_storage.store(cluster, events)
-            self.changes.set_changed()
+            self._config.changes.set_changed()
         except Exception as e:
             self.__handle_unexpected_error(e, f'Error while processing cluster {cluster["id"]}')
 
     def __handle_unexpected_error(self, e: Exception, msg: str):
-        self.error_counter.inc()
-        if self.is_sentry_enabled:
+        self._config.error_counter.inc()
+        if self._config.sentry.enabled:
             capture_exception(e)
         log.exception(msg)
+
+    def shutdown(self):
+        """
+        This is needed for python 3.8 and lower. With python 3.9 we can pass a parameter:
+        self._executor.shutdown(wait=False, cancel_futures=True)
+        """
+        if self._executor is not None:
+            # Do not accept further tasks
+            self._executor.shutdown(wait=False)
+            self._drain_queue()
+
+    def _drain_queue(self):
+        while True:
+            try:
+                work_item = self._executor._work_queue.get_nowait()  # pylint: disable=protected-access
+            except queue.Empty:
+                break
+            if work_item is not None:
+                work_item.future.cancel()

@@ -6,5 +6,5 @@ max-args=6
 min-public-methods=1
 
 [MESSAGE CONTROL]
-disable=missing-class-docstring,missing-function-docstring,missing-module-docstring,fixme,invalid-name,broad-except,import-error,useless-object-inheritance,no-member,inconsistent-return-statements,unspecified-encoding,too-many-public-methods,too-many-instance-attributes,unidiomatic-typecheck
+disable=missing-class-docstring,missing-function-docstring,missing-module-docstring,fixme,invalid-name,broad-except,import-error,useless-object-inheritance,no-member,inconsistent-return-statements,unspecified-encoding,too-many-public-methods,too-many-instance-attributes,unidiomatic-typecheck,logging-fstring-interpolation
 enable=superfluous-parens,class-naming-style,inherit-non-class

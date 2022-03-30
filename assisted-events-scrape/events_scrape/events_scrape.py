@@ -4,7 +4,7 @@ import os
 import sys
 import time
 import logging
-from concurrent.futures import ThreadPoolExecutor
+import signal
 import urllib3
 import sentry_sdk
 
@@ -38,7 +38,9 @@ class ScrapeEvents:
         self._max_idle_minutes = config.max_idle_minutes
         self._changes = Changes()
         self._error_counter = ErrorCounter()
+        self._shutdown = False
         worker_config = ClusterEventsWorkerConfig(
+            config.max_workers,
             config.sentry,
             self._error_counter,
             self._changes
@@ -50,6 +52,9 @@ class ScrapeEvents:
     def is_idle(self):
         return not self._changes.has_changed_in_last_minutes(self._max_idle_minutes)
 
+    def is_shutting_down(self):
+        return self._shutdown
+
     def has_too_many_unexpected_errors(self):
         return self._error_counter.get_errors() > self._errors_before_restart
 
@@ -59,13 +64,21 @@ class ScrapeEvents:
         if not clusters:
             log.warning("No clusters were found.")
             return None
-        with ThreadPoolExecutor(max_workers=self._max_workers) as executor:
-            cluster_count = len(clusters)
-            for cluster in clusters:
-                executor.submit(self._worker.store_events_for_cluster, cluster)
-            log.info(f"Sent {cluster_count} clusters for processing...")
-            executor.shutdown(wait=True)
+        self._worker.process_clusters(clusters)
         log.info("Finish syncing all clusters")
+
+    def signal_handler(self, sig, _):
+        logging.info(f"Captured signal {sig}, shutting down")
+        if self._executor is not None:
+            logging.debug("Clearing threadpool queue...")
+            self.shutdown_threadpool()
+            logging.debug("threadpool cleared")
+        self._shutdown = True
+        logging.info("Graceful shutdown handled")
+
+    def shutdown(self):
+        self._shutdown = True
+        self._worker.shutdown()
 
 
 def init_sentry(sentry_dsn):
@@ -77,20 +90,27 @@ def init_sentry(sentry_dsn):
     return False
 
 
+def handle_shutdown(handler):
+    signal.signal(signal.SIGINT, handler)
+    signal.signal(signal.SIGTERM, handler)
+
+
 def main():
     config = ScraperConfig.create_from_env()
     config.sentry.enabled = init_sentry(config.sentry.sentry_dsn)
 
     scrape_events = ScrapeEvents(config)
-
+    handle_shutdown(scrape_events.signal_handler)
     should_run = True
     while should_run:
         scrape_events.run_service()
 
-        if scrape_events.is_idle():
+        if scrape_events.is_shutting_down():
+            should_run = False
+        elif scrape_events.is_idle():
             log.error("Scraping is idle, exiting...")
             should_run = False
-        if scrape_events.has_too_many_unexpected_errors():
+        elif scrape_events.has_too_many_unexpected_errors():
             log.error("Too many unexpected errors, exiting")
             should_run = False
         log.info(f"Waiting {WAIT_TIME} seconds")
