@@ -160,16 +160,16 @@ objects:
               secretKeyRef:
                 key: session_secret
                 name: kibana-oauth-application
-        volumeMounts:
-        - mountPath: /etc/oauth-proxy/
-          name: oauth-proxy-htpasswd
-          readOnly: true
-      volumes:
-      - name: oauth-proxy-htpasswd
-        secret:
-          defaultMode: 420
-          optional: false
-          secretName: oauth-proxy
+          volumeMounts:
+          - mountPath: /etc/oauth-proxy/
+            name: oauth-proxy-htpasswd
+            readOnly: true
+        volumes:
+        - name: oauth-proxy-htpasswd
+          secret:
+            defaultMode: 420
+            optional: false
+            secretName: oauth-proxy
 
 parameters:
 - name: IMAGE_NAME
