@@ -37,9 +37,11 @@ class ClusterEventsWorker:
 
     def store_events_for_cluster(self, cluster: dict) -> None:
         try:
+            log.debug(f"Storing cluster: {cluster}")
             if "hosts" not in cluster or len(cluster["hosts"]) == 0:
                 cluster["hosts"] = self.cluster_repository.get_cluster_hosts(cluster["id"])
             events = self.event_repository.get_cluster_events(cluster["id"])
+            log.debug(f'Storing events for cluster {cluster["id"]}')
             self.cluster_events_storage.store(cluster, events)
             self._config.changes.set_changed()
         except Exception as e:
