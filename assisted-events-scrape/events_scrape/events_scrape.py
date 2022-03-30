@@ -40,12 +40,11 @@ class ScrapeEvents:
         self._error_counter = ErrorCounter()
         self._shutdown = False
         worker_config = ClusterEventsWorkerConfig(
-            config.max_workers,
+            config.n_workers,
             config.sentry,
             self._error_counter,
             self._changes
         )
-        self._max_workers = config.n_workers
         self._worker = ClusterEventsWorker(worker_config, self._cluster_repo, self._event_repo,
                                            self._cluster_events_storage)
 
@@ -67,18 +66,11 @@ class ScrapeEvents:
         self._worker.process_clusters(clusters)
         log.info("Finish syncing all clusters")
 
-    def signal_handler(self, sig, _):
+    def shutdown(self, sig, _):
         logging.info(f"Captured signal {sig}, shutting down")
-        if self._executor is not None:
-            logging.debug("Clearing threadpool queue...")
-            self.shutdown_threadpool()
-            logging.debug("threadpool cleared")
-        self._shutdown = True
-        logging.info("Graceful shutdown handled")
-
-    def shutdown(self):
         self._shutdown = True
         self._worker.shutdown()
+        logging.info("Graceful shutdown handled")
 
 
 def init_sentry(sentry_dsn):
@@ -100,7 +92,7 @@ def main():
     config.sentry.enabled = init_sentry(config.sentry.sentry_dsn)
 
     scrape_events = ScrapeEvents(config)
-    handle_shutdown(scrape_events.signal_handler)
+    handle_shutdown(scrape_events.shutdown)
     should_run = True
     while should_run:
         scrape_events.run_service()
