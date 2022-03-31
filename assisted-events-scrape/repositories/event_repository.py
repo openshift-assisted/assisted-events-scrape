@@ -1,8 +1,4 @@
-import json
-import tempfile
-
-from contextlib import suppress
-from assisted_service_client import rest
+EVENT_CATEGORIES = ["user", "metrics"]
 
 
 class EventRepository:
@@ -10,12 +6,4 @@ class EventRepository:
         self._client = assisted_client
 
     def get_cluster_events(self, cluster_id: str) -> list:
-        with tempfile.NamedTemporaryFile() as temp_event_file:
-            self.write_events_file(cluster_id, temp_event_file.name)
-            with open(temp_event_file.name) as f:
-                event_list = json.load(f)
-        return event_list
-
-    def write_events_file(self, cluster_id, output_file):
-        with suppress(rest.ApiException):
-            self._client.download_cluster_events(cluster_id, output_file, categories=["user", "metrics"])
+        return self._client.get_events(cluster_id, categories=EVENT_CATEGORIES)

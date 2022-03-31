@@ -1,4 +1,3 @@
-import os
 import re
 import time
 import hashlib
@@ -21,14 +20,11 @@ class ClusterEventsStorage:
         if config.elasticsearch.username:
             http_auth = (config.elasticsearch.username, config.elasticsearch.password)
         es_client = elasticsearch.Elasticsearch(config.elasticsearch.host, http_auth=http_auth)
-        return ClusterEventsStorage(
-            inventory_client, es_client,
-            config.backup_destination, config.inventory_url, config.elasticsearch.index)
+        return ClusterEventsStorage(inventory_client, es_client, config.inventory_url, config.elasticsearch.index)
 
-    def __init__(self, assisted_client, es_client, backup_destination, inventory_url, index):
+    def __init__(self, assisted_client, es_client, inventory_url, index):
         self._client = assisted_client
         self._es_client = es_client
-        self._back_destination = backup_destination
         self._inventory_url = inventory_url
         self._index = index
         self._cache_event_count_per_cluster = {}
@@ -37,19 +33,6 @@ class ClusterEventsStorage:
         d = {'cluster': cluster}
         d.update(self._client.get_versions())
         return d
-
-    def __save_new_backup(self, cluster_id, event_list, metadata_json):
-        cluster_backup_directory_path = os.path.join(self._back_destination, f"cluster_{cluster_id}")
-        if not os.path.exists(cluster_backup_directory_path):
-            os.makedirs(cluster_backup_directory_path)
-
-        event_dest = os.path.join(cluster_backup_directory_path, "events.json")
-        with open(event_dest, "w") as f:
-            json.dump(event_list, f, indent=4)
-
-        metadata_dest = os.path.join(cluster_backup_directory_path, "metadata.json")
-        with open(metadata_dest, "w") as f:
-            json.dump(metadata_json, f, indent=4)
 
     def store(self, cluster, event_list):
         cluster_id = cluster["id"]
@@ -60,9 +43,6 @@ class ClusterEventsStorage:
             event_list = event_list[:MAX_EVENTS]
 
         metadata_json = self.__get_metadata_json(cluster)
-
-        if self._back_destination:
-            self.__save_new_backup(cluster_id, event_list, metadata_json)
 
         cluster_bash_data = process_metadata(metadata_json)
         event_names = get_cluster_object_names(cluster_bash_data)

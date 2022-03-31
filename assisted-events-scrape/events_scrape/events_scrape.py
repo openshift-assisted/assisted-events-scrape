@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import os
 import sys
 import time
 import logging
@@ -25,9 +24,6 @@ es_logger.setLevel(logging.WARNING)
 
 class ScrapeEvents:
     def __init__(self, config: ScraperConfig):
-        if config.backup_destination and not os.path.exists(config.backup_destination):
-            os.makedirs(config.backup_destination)
-
         self._client = ClientFactory.create_client(url=config.inventory_url, offline_token=config.offline_token)
         self._cluster_events_storage = ClusterEventsStorage.create_with_inventory_client(self._client, config)
 
