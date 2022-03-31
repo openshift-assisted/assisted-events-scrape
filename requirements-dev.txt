@@ -1,0 +1,4 @@
+yq~=2.14.0
+flake8
+pylint
+pytest

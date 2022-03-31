@@ -48,7 +48,7 @@ class ScraperConfig:
         n_workers = max(MINIMUM_WORKERS, int(get_env("N_WORKERS", default=DEFAULT_ENV_N_WORKERS)))
         return ScraperConfig(
             get_env("ASSISTED_SERVICE_URL"),
-            get_env("OFFLINE_TOKEN", mandatory=True),
+            get_env("OFFLINE_TOKEN"),
             SentryConfig.create_from_env(),
             ElasticsearchConfig.create_from_env(),
             int(get_env("MAX_IDLE_MINUTES", default=DEFAULT_ENV_MAX_IDLE_MINUTES)),

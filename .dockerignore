@@ -6,5 +6,7 @@ build
 Dockerfile
 Dockerfile.build
 workspace.xml
-utils.sh
 .idea
+openshift/
+assisted-events-scrape/tests/integration/manifests/
+tools/

@@ -35,20 +35,20 @@ objects:
                 name: events-scrape
           env:
           - name: SENTRY_DSN
-            value: ${SENTRY_DSN}
+            value: "${SENTRY_DSN}"
           - name: MAX_IDLE_MINUTES
-            value: ${MAX_IDLE_MINUTES}
+            value: "${MAX_IDLE_MINUTES}"
           - name: ERRORS_BEFORE_RESTART
-            value: ${ERRORS_BEFORE_RESTART}
+            value: "${ERRORS_BEFORE_RESTART}"
           - name: N_WORKERS
-            value: ${N_WORKERS}
+            value: "${N_WORKERS}"
           - name: ES_SERVER
             valueFrom:
               secretKeyRef:
                 key: endpoint
                 name: assisted-installer-elasticsearch
           - name: ES_INDEX
-            value: ${ES_INDEX}
+            value: "${ES_INDEX}"
           - name: ES_USER
             valueFrom:
               secretKeyRef:
@@ -166,7 +166,7 @@ parameters:
   value: ''
   required: true
 - name: REPLICAS_COUNT
-  value: "1"
+  value: 1
 - name: ES_INDEX
   value: 'assisted-service-events'
 - name: OAUTH_IMAGE

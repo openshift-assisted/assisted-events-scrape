@@ -1,0 +1,80 @@
+---
+# Source: mockserver/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: assisted-service
+  labels:
+    app: mockserver
+spec:
+  type: ClusterIP
+  ports:
+    - name: serviceport
+      protocol: TCP
+      targetPort: serviceport
+      port: 1080
+  selector:
+    app: mockserver
+---
+# Source: mockserver/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: assisted-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mockserver
+  template:
+    metadata:
+      name: assisted-service
+      labels:
+        app: mockserver
+    spec:
+      serviceAccountName: default
+      containers:
+        - name: mockserver
+          image: mockserver/mockserver:mockserver-5.13.0
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            runAsUser: 65534
+            readOnlyRootFilesystem: false
+            allowPrivilegeEscalation: false
+          ports:
+            - name: serviceport
+              containerPort: 1080
+              protocol: TCP
+          readinessProbe:
+            tcpSocket:
+              port: serviceport
+            initialDelaySeconds: 2
+            periodSeconds: 2
+            successThreshold: 1
+            failureThreshold: 10
+          livenessProbe:
+            tcpSocket:
+              port: serviceport
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            successThreshold: 1
+            failureThreshold: 10
+          env:
+            - name: MOCKSERVER_LOG_LEVEL
+              value: "INFO"
+            - name: SERVER_PORT
+              value: "1080"
+          volumeMounts:
+            - name: config-volume
+              mountPath: /config
+            - name: libs-volume
+              mountPath: /libs
+      volumes:
+        - name: config-volume
+          configMap:
+            name: mockserver-config
+            optional: true
+        - name: libs-volume
+          configMap:
+            name: mockserver-config
+            optional: true
