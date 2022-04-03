@@ -36,7 +36,6 @@ class ElasticsearchConfig:
 @dataclass
 class ScraperConfig:
     inventory_url: str
-    backup_destination: str
     offline_token: str
     sentry: SentryConfig
     elasticsearch: ElasticsearchConfig
@@ -49,7 +48,6 @@ class ScraperConfig:
         n_workers = max(MINIMUM_WORKERS, int(get_env("N_WORKERS", default=DEFAULT_ENV_N_WORKERS)))
         return ScraperConfig(
             get_env("ASSISTED_SERVICE_URL"),
-            get_env("BACKUP_DESTINATION"),
             get_env("OFFLINE_TOKEN", mandatory=True),
             SentryConfig.create_from_env(),
             ElasticsearchConfig.create_from_env(),
