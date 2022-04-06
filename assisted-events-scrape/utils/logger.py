@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import logging
+import os
 import sys
 from pythonjsonlogger import jsonlogger
 
@@ -20,8 +21,9 @@ def get_custom_format() -> str:
 logging.getLogger("requests").setLevel(logging.ERROR)
 logging.getLogger("urllib3").setLevel(logging.ERROR)
 
+log_level = os.environ.get('LOGLEVEL', 'INFO').upper()
 log = logging.getLogger()
-log.setLevel(logging.DEBUG)
+log.setLevel(log_level)
 
 fmt = jsonlogger.JsonFormatter(get_custom_format())
 
