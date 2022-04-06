@@ -169,7 +169,7 @@ parameters:
   value: ''
   required: true
 - name: REPLICAS_COUNT
-  value: 1
+  value: "1"
 - name: ES_INDEX
   value: 'assisted-service-events'
 - name: OAUTH_IMAGE
