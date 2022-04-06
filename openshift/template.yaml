@@ -181,6 +181,6 @@ parameters:
 - name: MAX_IDLE_MINUTES
   value: '120'
 - name: ERRORS_BEFORE_RESTART
-  value: '100'
+  value: '10000'
 - name: N_WORKERS
   value: '5'
