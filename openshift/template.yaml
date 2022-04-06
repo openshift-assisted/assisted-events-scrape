@@ -157,7 +157,10 @@ objects:
           secret:
             defaultMode: 420
             optional: false
-            secretName: oauth-proxy
+            secretName: kibana-oauth-application
+            items:
+            - key: htpasswd
+              path: htpasswd
 
 parameters:
 - name: IMAGE_NAME
