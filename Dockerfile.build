@@ -10,11 +10,14 @@ RUN dnf update -y && dnf install -y epel-release &&\
 # Install kind
 RUN curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.12.0/kind-linux-amd64 &&\
     install kind /usr/local/bin/kind
-# Install kubectl
-RUN curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" &&\
-    curl -LO "https://dl.k8s.io/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl.sha256" &&\
-    echo "$(cat kubectl.sha256)  kubectl" | sha256sum --check &&\
-    install -o root -g root kubectl /usr/local/bin/kubectl
+
+ENV OC_VERSION=4.10.8
+# Install kubectl and oc
+RUN curl -sS -o oc-${OC_VERSION}.tar.gz https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp/4.10.8/openshift-client-linux-${OC_VERSION}.tar.gz &&\
+    tar xzvf oc-${OC_VERSION}.tar.gz &&\
+    install kubectl /usr/local/bin/kubectl &&\
+    install oc /usr/local/bin/oc &&\
+    rm -f oc-${OC_VERSION}.tar.gz README.md
 
 COPY ./requirements.txt ./requirements-dev.txt ./
 

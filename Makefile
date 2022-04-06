@@ -22,6 +22,9 @@ install: build-wheel
 # Verify #
 ##########
 
+validate-manifest:
+	oc process --local=true -f openshift/template.yaml --param IMAGE_TAG=foobar > /dev/null
+
 lint: flake8 pylint
 
 pylint:
