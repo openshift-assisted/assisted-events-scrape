@@ -1,7 +1,6 @@
 CONTAINER_COMMAND := $(shell ./tools/utils.sh get_container_runtime_command)
-IMAGE_TAG := $(or ${IMAGE_TAG}, latest)
-IMAGE_NAME := $(or $(ASSISTED_EVENTS_SCRAPE_IMAGE),quay.io/edge-infrastructure/assisted-events-scrape)
-ASSISTED_EVENTS_SCRAPE_IMAGE := $(IMAGE_NAME):$(IMAGE_TAG)
+TAG := $(or ${TAG},latest)
+ASSISTED_EVENTS_SCRAPE_IMAGE := $(or $(ASSISTED_EVENTS_SCRAPE_IMAGE),quay.io/edge-infrastructure/assisted-events-scrape:$(TAG))
 
 install_assisted_service_client:
 	python3 -m pip install assisted-service-client
