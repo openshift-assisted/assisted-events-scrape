@@ -32,7 +32,7 @@ pylint:
 flake8:
 	flake8 .
 
-test: lint unit-test cleanup-integration-test integration-test
+test: validate-manifest lint unit-test cleanup-integration-test integration-test
 
 unit-test:
 	pytest assisted-events-scrape/tests/unit

@@ -42,6 +42,8 @@ objects:
             value: "${ERRORS_BEFORE_RESTART}"
           - name: N_WORKERS
             value: "${N_WORKERS}"
+          - name: LOGLEVEL
+            value: "${LOGLEVEL}"
           - name: ES_SERVER
             valueFrom:
               secretKeyRef:
@@ -184,3 +186,5 @@ parameters:
   value: '100'
 - name: N_WORKERS
   value: '5'
+- name: LOGLEVEL
+  value: 'INFO'
