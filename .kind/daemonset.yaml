@@ -1,0 +1,29 @@
+# Tune nodes: elasticsearch needs vm.max_map_count=262144 or greater
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: node-setup
+  namespace: kube-system
+  labels:
+    k8s-app: node-setup
+spec:
+  selector:
+    matchLabels:
+      name: node-setup
+  template:
+    metadata:
+      labels:
+        name: node-setup
+    spec:
+      tolerations:
+      - key: node-role.kubernetes.io/master
+        operator: Exists
+        effect: NoSchedule
+      containers:
+      - name: configure-sysctl
+        securityContext:
+          runAsUser: 0
+          privileged: true
+        image: "busybox:1.34"
+        imagePullPolicy: "IfNotPresent"
+        command: ["sysctl", "-w", "vm.max_map_count=262144"]
