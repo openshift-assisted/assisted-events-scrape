@@ -1,4 +1,4 @@
-apiVersion: v1
+apiVersion: template.openshift.io/v1
 kind: Template
 metadata:
   name: assisted-events-scrape
@@ -22,7 +22,7 @@ objects:
         containers:
         - name: assisted-events-scrape
           image: ${IMAGE_NAME}:${IMAGE_TAG}
-          imagePullPolicy: Always
+          imagePullPolicy: ${IMAGE_PULL_POLICY}
           resources:
             limits:
               cpu: 500m
@@ -190,3 +190,5 @@ parameters:
   value: '5'
 - name: LOGLEVEL
   value: 'INFO'
+- name: IMAGE_PULL_POLICY
+  value: 'Always'
