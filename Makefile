@@ -40,7 +40,7 @@ unit-test:
 
 ci-integration-test:
 	./tools/deploy_manifests.sh ocp $(ASSISTED_EVENTS_SCRAPE_IMAGE) $(TEST_NAMESPACE)
-	ES_SERVER=$(./tools/get_ocp_route_host.sh) ES_INDEX=assisted-service-events pytest assisted-events-scrape/tests/integration
+	ES_SERVER=$$(./tools/get_ocp_route_host.sh):80 ES_INDEX=assisted-service-events pytest assisted-events-scrape/tests/integration
 
 integration-test: build-image
 	kind get clusters | grep assisted-events-scrape || kind create cluster --name assisted-events-scrape
