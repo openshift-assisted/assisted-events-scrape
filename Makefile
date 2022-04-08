@@ -1,6 +1,7 @@
 CONTAINER_COMMAND := $(shell ./tools/utils.sh get_container_runtime_command)
 TAG := $(or ${TAG},latest)
 ASSISTED_EVENTS_SCRAPE_IMAGE := $(or $(ASSISTED_EVENTS_SCRAPE_IMAGE),quay.io/edge-infrastructure/assisted-events-scrape:$(TAG))
+TEST_NAMESPACE := assisted-events-scrape-test
 
 install_assisted_service_client:
 	python3 -m pip install assisted-service-client
@@ -37,19 +38,17 @@ test: validate-manifest lint unit-test cleanup-integration-test integration-test
 unit-test:
 	pytest assisted-events-scrape/tests/unit
 
+ci-integration-test:
+	./tools/deploy_manifests.sh ocp $(ASSISTED_EVENTS_SCRAPE_IMAGE) $(TEST_NAMESPACE)
+	ES_SERVER=$(./tools/get_ocp_route_host.sh) ES_INDEX=assisted-service-events pytest assisted-events-scrape/tests/integration
+
 integration-test: build-image
 	kind get clusters | grep assisted-events-scrape || kind create cluster --name assisted-events-scrape
 	kind --name assisted-events-scrape export kubeconfig
+	kubectl apply -f .kind/daemonset.yaml
 	kind load docker-image --name assisted-events-scrape $(ASSISTED_EVENTS_SCRAPE_IMAGE)
-	./tools/generate_mockserver_configmap.sh | kubectl delete -f - || true
-	./tools/generate_mockserver_configmap.sh | kubectl create -f - || true
-	kubectl apply -f assisted-events-scrape/tests/integration/manifests
-	kubectl wait --timeout=120s --for=condition=Available deployment --all
-	kubectl wait --timeout=300s --for=condition=Ready pods --all
-	./tools/ocp2k8s.sh $(ASSISTED_EVENTS_SCRAPE_IMAGE) | kubectl apply -f -
-	kubectl wait --timeout=30s --for=condition=Available deployment --all
-	kubectl wait --timeout=30s --for=condition=Ready pods --all
-	ES_SERVER=$$(./tools/get_elasticsearch_endpoint.sh) ES_INDEX=assisted-service-events pytest assisted-events-scrape/tests/integration
+	./tools/deploy_manifests.sh kind $(ASSISTED_EVENTS_SCRAPE_IMAGE) $(TEST_NAMESPACE)
+	ES_SERVER=$$(./tools/get_elasticsearch_endpoint.sh $(TEST_NAMESPACE)) ES_INDEX=assisted-service-events pytest assisted-events-scrape/tests/integration
 
 cleanup-integration-test:
 	kind delete cluster --name assisted-events-scrape || true

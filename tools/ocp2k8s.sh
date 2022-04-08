@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -eu
 image=$1
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 

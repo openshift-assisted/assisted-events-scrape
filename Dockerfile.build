@@ -9,7 +9,7 @@ RUN dnf update -y && dnf install -y epel-release &&\
     python3 -m venv ${VIRTUAL_ENV:-/opt/venv} && python3 -m pip install --upgrade pip
 # Install kind
 RUN curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.12.0/kind-linux-amd64 &&\
-    install kind /usr/local/bin/kind
+    install kind /usr/local/bin/kind && rm -f kind
 
 ENV OC_VERSION=4.10.8
 # Install kubectl and oc
@@ -17,7 +17,7 @@ RUN curl -sS -o oc-${OC_VERSION}.tar.gz https://mirror.openshift.com/pub/openshi
     tar xzvf oc-${OC_VERSION}.tar.gz &&\
     install kubectl /usr/local/bin/kubectl &&\
     install oc /usr/local/bin/oc &&\
-    rm -f oc-${OC_VERSION}.tar.gz README.md
+    rm -f oc-${OC_VERSION}.tar.gz README.md kubectl oc
 
 COPY ./requirements.txt ./requirements-dev.txt ./
 
