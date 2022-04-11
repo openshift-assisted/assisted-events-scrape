@@ -31,8 +31,7 @@ data:
       "editable": true,
       "fiscalYearStartMonth": 0,
       "graphTooltip": 1,
-      "id": 252,
-      "iteration": 1647422751045,
+      "iteration": 1649686877703,
       "links": [],
       "liveNow": false,
       "panels": [
@@ -528,6 +527,210 @@ data:
           ],
           "title": "RX/TX bytes",
           "type": "timeseries"
+        },
+        {
+          "collapsed": true,
+          "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 17
+          },
+          "id": 38,
+          "panels": [
+            {
+              "datasource": {
+                "type": "cloudwatch",
+                "uid": "P4AAF69133323129D"
+              },
+              "description": "Errors from stage environment",
+              "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 18
+              },
+              "id": 36,
+              "options": {
+                "dedupStrategy": "none",
+                "enableLogDetails": true,
+                "prettifyLogMessage": false,
+                "showCommonLabels": false,
+                "showLabels": false,
+                "showTime": false,
+                "sortOrder": "Descending",
+                "wrapLogMessage": false
+              },
+              "targets": [
+                {
+                  "datasource": {
+                    "type": "cloudwatch",
+                    "uid": "P4AAF69133323129D"
+                  },
+                  "expression": "fields message\n| filter message like '\"levelname\": \"ERROR\"'\n| filter kubernetes.container_name = \"assisted-events-scrape\" and kubernetes.namespace_name = \"assisted-installer-production\"\n| sort @timestamp desc\n| limit 100",
+                  "id": "",
+                  "logGroupNames": [
+                    "app-sre-prod-04-5ts49.application"
+                  ],
+                  "namespace": "",
+                  "queryMode": "Logs",
+                  "refId": "A",
+                  "region": "default",
+                  "statsGroups": []
+                }
+              ],
+              "title": "[PROD] Error log",
+              "type": "logs"
+            },
+            {
+              "datasource": {
+                "type": "cloudwatch",
+                "uid": "P4AAF69133323129D"
+              },
+              "description": "Errors from stage environment",
+              "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 12,
+                "y": 18
+              },
+              "id": 39,
+              "options": {
+                "dedupStrategy": "none",
+                "enableLogDetails": true,
+                "prettifyLogMessage": false,
+                "showCommonLabels": false,
+                "showLabels": false,
+                "showTime": false,
+                "sortOrder": "Descending",
+                "wrapLogMessage": false
+              },
+              "targets": [
+                {
+                  "datasource": {
+                    "type": "cloudwatch",
+                    "uid": "P4AAF69133323129D"
+                  },
+                  "expression": "fields message\n| filter kubernetes.container_name = \"assisted-events-scrape\" and kubernetes.namespace_name = \"assisted-installer-production\"\n| sort @timestamp desc\n| limit 100",
+                  "id": "",
+                  "logGroupNames": [
+                    "app-sre-prod-04-5ts49.application"
+                  ],
+                  "namespace": "",
+                  "queryMode": "Logs",
+                  "refId": "A",
+                  "region": "default",
+                  "statsGroups": []
+                }
+              ],
+              "title": "[PROD] Log tail",
+              "type": "logs"
+            }
+          ],
+          "title": "[PRODUCTION] Logs",
+          "type": "row"
+        },
+        {
+          "collapsed": true,
+          "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 18
+          },
+          "id": 35,
+          "panels": [
+            {
+              "datasource": {
+                "type": "cloudwatch",
+                "uid": "P05A8419FC4179100"
+              },
+              "description": "Errors from stage environment",
+              "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 27
+              },
+              "id": 33,
+              "options": {
+                "dedupStrategy": "none",
+                "enableLogDetails": true,
+                "prettifyLogMessage": false,
+                "showCommonLabels": false,
+                "showLabels": false,
+                "showTime": false,
+                "sortOrder": "Descending",
+                "wrapLogMessage": false
+              },
+              "targets": [
+                {
+                  "datasource": {
+                    "type": "cloudwatch",
+                    "uid": "P05A8419FC4179100"
+                  },
+                  "expression": "fields message\n| filter kubernetes.container_name = \"assisted-events-scrape\" and kubernetes.namespace_name = \"assisted-installer-stage\"\n| filter message like '\"levelname\": \"ERROR\"'\n| sort @timestamp desc\n| limit 100",
+                  "id": "",
+                  "logGroupNames": [
+                    "app-sre-stage-0-ctbn8.application"
+                  ],
+                  "namespace": "",
+                  "queryMode": "Logs",
+                  "refId": "A",
+                  "region": "default",
+                  "statsGroups": []
+                }
+              ],
+              "title": "[STAGE] Error log",
+              "type": "logs"
+            },
+            {
+              "datasource": {
+                "type": "cloudwatch",
+                "uid": "P05A8419FC4179100"
+              },
+              "description": "Errors from stage environment",
+              "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 12,
+                "y": 27
+              },
+              "id": 40,
+              "options": {
+                "dedupStrategy": "none",
+                "enableLogDetails": true,
+                "prettifyLogMessage": false,
+                "showCommonLabels": false,
+                "showLabels": false,
+                "showTime": false,
+                "sortOrder": "Descending",
+                "wrapLogMessage": false
+              },
+              "targets": [
+                {
+                  "datasource": {
+                    "type": "cloudwatch",
+                    "uid": "P05A8419FC4179100"
+                  },
+                  "expression": "fields message\n| filter kubernetes.container_name = \"assisted-events-scrape\" and kubernetes.namespace_name = \"assisted-installer-stage\"\n| sort @timestamp desc\n| limit 100",
+                  "id": "",
+                  "logGroupNames": [
+                    "app-sre-stage-0-ctbn8.application"
+                  ],
+                  "namespace": "",
+                  "queryMode": "Logs",
+                  "refId": "A",
+                  "region": "default",
+                  "statsGroups": []
+                }
+              ],
+              "title": "[STAGE] Error log",
+              "type": "logs"
+            }
+          ],
+          "title": "[STAGE] Logs",
+          "type": "row"
         }
       ],
       "refresh": "",
@@ -539,8 +742,8 @@ data:
           {
             "current": {
               "selected": false,
-              "text": "assisted-installer-integration",
-              "value": "assisted-installer-integration"
+              "text": "assisted-installer-production",
+              "value": "assisted-installer-production"
             },
             "datasource": {
               "type": "prometheus",
@@ -565,9 +768,9 @@ data:
           },
           {
             "current": {
-              "selected": false,
-              "text": "app-sre-stage-01-prometheus",
-              "value": "app-sre-stage-01-prometheus"
+              "selected": true,
+              "text": "app-sre-prod-04-prometheus",
+              "value": "app-sre-prod-04-prometheus"
             },
             "hide": 0,
             "includeAll": false,
@@ -663,13 +866,13 @@ data:
         ]
       },
       "time": {
-        "from": "now-1h",
+        "from": "now-30m",
         "to": "now"
       },
       "timepicker": {},
       "timezone": "",
       "title": "Assisted Events Scrape",
       "uid": "eUOTqvP7z",
-      "version": 35,
+      "version": 1,
       "weekStart": ""
-      }
+    }
