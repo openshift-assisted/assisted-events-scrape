@@ -5,6 +5,7 @@ It will look for fixtures in the integration test folder, and build the JSON con
 needed by mockserver.
 """
 import json
+import logging
 from pathlib import Path
 
 
@@ -47,21 +48,27 @@ rules.append(get_rule(
 for cluster in clusters:
     cluster_id = cluster["id"]
     event_file_path = fixtures_path / f"events-{cluster_id}.json"
-    with event_file_path.open("r") as f:
-        events_txt = json.load(f)
-        params = {"cluster_id": [cluster_id]}
-        rule = get_rule(
-            path="/api/assisted-install/v2/events",
-            queryStringParameters=params,
-            body=events_txt)
-        rules.append(rule)
+    try:
+        with event_file_path.open("r") as f:
+            events_txt = json.load(f)
+            params = {"cluster_id": [cluster_id]}
+            rule = get_rule(
+                path="/api/assisted-install/v2/events",
+                queryStringParameters=params,
+                body=events_txt)
+            rules.append(rule)
+    except IOError:
+        logging.warning(f"File {event_file_path} not found")
 
-    cluster_file_path = fixtures_path / f"cluster-{cluster_id}.json"
-    with cluster_file_path.open("r") as f:
-        cluster_txt = json.load(f)
-        rule = get_rule(
-            path=f"/api/assisted-install/v2/clusters/{cluster_id}",
-            body=cluster_txt)
-        rules.append(rule)
+    try:
+        cluster_file_path = fixtures_path / f"cluster-{cluster_id}.json"
+        with cluster_file_path.open("r") as f:
+            cluster_txt = json.load(f)
+            rule = get_rule(
+                path=f"/api/assisted-install/v2/clusters/{cluster_id}",
+                body=cluster_txt)
+            rules.append(rule)
+    except IOError:
+        logging.warning(f"File {event_file_path} not found")
 
 print(json.dumps(rules))

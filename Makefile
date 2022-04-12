@@ -52,3 +52,7 @@ integration-test: build-image
 
 cleanup-integration-test:
 	kind delete cluster --name assisted-events-scrape || true
+
+kind-reload-image: build-image
+	kind load docker-image --name assisted-events-scrape $(ASSISTED_EVENTS_SCRAPE_IMAGE)
+	kubectl delete pod -l app=assisted-events-scrape
