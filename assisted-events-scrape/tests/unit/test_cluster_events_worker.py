@@ -3,6 +3,7 @@ from unittest.mock import Mock
 from workers import ClusterEventsWorker, ClusterEventsWorkerConfig
 from utils import ErrorCounter, Changes
 from config import SentryConfig
+from assisted_service_client.rest import ApiException
 
 
 class TestClusterEventsWorker:
@@ -42,6 +43,17 @@ class TestClusterEventsWorker:
         assert 1 == self.error_counter.get_errors()
         assert not self.changes.has_changed_in_last_minutes(1)
 
+    def test_cluster_not_found(self):
+        self.cluster_repo_mock.get_cluster_hosts.side_effect = ApiException(status=404, reason="Not found")
+
+        cluster = {"id": "abcd", "name": "mycluster"}
+        self.worker.store_events_for_cluster(cluster)
+        self.event_repo_mock.get_cluster_events.assert_called_once()
+        self.cluster_events_storage_mock.store.assert_called_once()
+
+        assert 0 == self.error_counter.get_errors()
+        assert self.changes.has_changed_in_last_minutes(1)
+
     def test_error_getting_events(self):
         self.event_repo_mock.get_cluster_events.side_effect = Exception("Error getting cluster")
 
@@ -52,6 +64,17 @@ class TestClusterEventsWorker:
 
         assert 1 == self.error_counter.get_errors()
         assert not self.changes.has_changed_in_last_minutes(1)
+
+    def test_events_not_found(self):
+        self.event_repo_mock.get_cluster_events.side_effect = ApiException(status=404, reason="Not found")
+
+        cluster = {"id": "abcd", "name": "mycluster"}
+        self.worker.store_events_for_cluster(cluster)
+        self.cluster_repo_mock.get_cluster_hosts.assert_called_once()
+        self.cluster_events_storage_mock.store.assert_called_once()
+
+        assert 0 == self.error_counter.get_errors()
+        assert self.changes.has_changed_in_last_minutes(1)
 
     def test_error_storing_events(self):
         self.cluster_events_storage_mock.store.side_effect = Exception("Error getting cluster")
