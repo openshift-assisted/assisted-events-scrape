@@ -30,7 +30,7 @@ ${cli} wait ${ns} --timeout=300s --for=condition=Ready pods --all
 if [[ "${platform}" == "ocp" ]]; then
     image_name=$(echo $ASSISTED_EVENTS_SCRAPE_IMAGE | cut -d: -f1)
     image_tag=$(echo $ASSISTED_EVENTS_SCRAPE_IMAGE | cut -d: -f2)
-    ${cli} process --output=yaml ${ns} -f openshift/template.yaml --param IMAGE_NAME=${image_name} IMAGE_TAG=${image_tag} LOGLEVEL=${log_level} | ${cli} apply ${ns} -f -
+    ${cli} process --output=yaml ${ns} -f openshift/template.yaml --param IMAGE_NAME=${image_name} IMAGE_TAG=${image_tag} LOGLEVEL=${log_level} SUSPEND_JOBS=true | ${cli} apply ${ns} -f -
 else
     ./tools/ocp2k8s.sh ${image} | ${cli} apply ${ns} -f -
 fi
