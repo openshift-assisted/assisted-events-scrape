@@ -18,5 +18,6 @@ docker --config="$DOCKER_CONF" login -u="${QUAY_USER}" -p="${QUAY_TOKEN}" quay.i
 docker tag "${ASSISTED_EVENTS_SCRAPE_IMAGE}" "${REPO}:latest"
 docker --config="$DOCKER_CONF" push "${ASSISTED_EVENTS_SCRAPE_IMAGE}"
 docker --config="$DOCKER_CONF" push "${REPO}:latest"
+docker pull "${ELASTICDUMP_ORIGINAL_REPO}:${ELASTICDUMP_IMAGE_TAG}"
 docker tag "${ELASTICDUMP_ORIGINAL_REPO}:${ELASTICDUMP_IMAGE_TAG}" "${ELASTICDUMP_IMAGE_REPO}:${ELASTICDUMP_IMAGE_TAG}"
 docker --config="$DOCKER_CONF" push "${ELASTICDUMP_IMAGE_REPO}:${ELASTICDUMP_IMAGE_TAG}"
