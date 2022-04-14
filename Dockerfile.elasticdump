@@ -1,0 +1,9 @@
+FROM registry.access.redhat.com/ubi8/nodejs-14-minimal:1-43
+
+ENV ES_DUMP_VER=v6.82.3
+ENV NODE_ENV production
+ENV PATH $PATH:${NPM_CONFIG_PREFIX}/bin
+
+RUN npm install elasticdump@${ES_DUMP_VER} -g
+
+ENTRYPOINT ["elasticdump"]
