@@ -259,7 +259,7 @@ parameters:
   value: "false"
 # Below parameters for migration job, to be deleted
 - name: JOB_NAME
-  value: "march-july-2021"
+  value: "march-2021"
 - name: ELASTICDUMP_IMAGE
   value: "quay.io/app-sre/elasticdump:v6.82.3"
 - name: ELASTICDUMP_LIMIT
@@ -267,4 +267,4 @@ parameters:
 - name: ELASTICDUMP_OFFSET
   value: "0"
 - name: MIGRATION_INDICES
-  value: "assisted-service-events_2021-03,assisted-service-events_2021-04,assisted-service-events_2021-05,assisted-service-events_2021-06,assisted-service-events_2021-07"
+  value: "assisted-service-events_2021-03"
