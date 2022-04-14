@@ -165,6 +165,70 @@ objects:
             items:
             - key: htpasswd
               path: htpasswd
+# Elasticsearch data migration job. To be deleted once completed
+- apiVersion: batch/v1
+  kind: Job
+  metadata:
+    name: load-historical-data-${JOB_NAME}
+  spec:
+    backoffLimit: 0
+    completions: 1
+    parallelism: 1
+    suspend: ${{SUSPEND_JOBS}}
+    template:
+      spec:
+        containers:
+        - command:
+          - bash
+          args:
+          - "-c"
+          - "ELASTIC_AUTH_HOST=https://${ELASTIC_USER}:${ELASTIC_PASSWORD}@${ELASTIC_HOST:8};\
+   for index in ${MIGRATION_INDICES//,/ }; do \
+     migration_index=restored_${index}; \
+     echo 'Migrating '${migration_index}'...'; \
+     elasticdump --s3AccessKeyId=${AWS_ACCESS_KEY_ID} --s3SecretAccessKey=${AWS_SECRET_ACCESS_KEY} --input=s3://${AWS_S3_BUCKET}/migration-v2_${index}.json --output=${ELASTIC_AUTH_HOST}/${migration_index} --limit=${ELASTICDUMP_LIMIT} --offset=${ELASTICDUMP_OFFSET} ; \
+   done"
+          env:
+          - name: ELASTIC_HOST
+            valueFrom:
+              secretKeyRef:
+                key: endpoint
+                name: assisted-installer-elasticsearch
+          - name: MIGRATION_INDICES
+            value: "${MIGRATION_INDICES}"
+          - name: ELASTICDUMP_LIMIT
+            value: "${ELASTICDUMP_LIMIT}"
+          - name: ELASTICDUMP_OFFSET
+            value: "${ELASTICDUMP_OFFSET}"
+          - name: AWS_ACCESS_KEY_ID
+            valueFrom:
+              secretKeyRef:
+                key: aws_access_key_id
+                name: assisted-installer-s3-migration
+          - name: AWS_SECRET_ACCESS_KEY
+            valueFrom:
+              secretKeyRef:
+                key: aws_secret_access_key
+                name: assisted-installer-s3-migration
+          - name: AWS_S3_BUCKET
+            valueFrom:
+              secretKeyRef:
+                key: bucket
+                name: assisted-installer-s3-migration
+          - name: ELASTIC_USER
+            valueFrom:
+              secretKeyRef:
+                key: master_user_name
+                name: elastic-master-credentials
+          - name: ELASTIC_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                key: master_user_password
+                name: elastic-master-credentials
+          image: ${ELASTICDUMP_IMAGE}
+          imagePullPolicy: IfNotPresent
+          name: elastic-dump
+        restartPolicy: Never
 parameters:
 - name: IMAGE_NAME
   value: quay.io/app-sre/assisted-events-scrape
@@ -193,3 +257,14 @@ parameters:
   value: 'Always'
 - name: SUSPEND_JOBS
   value: "false"
+# Below parameters for migration job, to be deleted
+- name: JOB_NAME
+  value: "march-july-2021"
+- name: ELASTICDUMP_IMAGE
+  value: "quay.io/app-sre/elasticdump:v6.82.3"
+- name: ELASTICDUMP_LIMIT
+  value: "100"
+- name: ELASTICDUMP_OFFSET
+  value: "0"
+- name: MIGRATION_INDICES
+  value: "assisted-service-events_2021-03,assisted-service-events_2021-04,assisted-service-events_2021-05,assisted-service-events_2021-06,assisted-service-events_2021-07"
