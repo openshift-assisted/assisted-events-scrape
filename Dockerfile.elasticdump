@@ -4,6 +4,13 @@ ENV ES_DUMP_VER=v6.82.3
 ENV NODE_ENV production
 ENV PATH $PATH:${NPM_CONFIG_PREFIX}/bin
 
-RUN npm install elasticdump@${ES_DUMP_VER} -g
+USER root
 
+RUN microdnf install zip &&\
+ curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" &&\
+ unzip awscliv2.zip && ./aws/install && rm -f awscliv2.zip
+
+USER 1001
+
+RUN npm install elasticdump@${ES_DUMP_VER} -g
 ENTRYPOINT ["elasticdump"]
