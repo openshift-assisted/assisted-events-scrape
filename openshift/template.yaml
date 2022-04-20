@@ -184,9 +184,11 @@ objects:
           - "-c"
           - "ELASTIC_AUTH_HOST=https://${ELASTIC_USER}:${ELASTIC_PASSWORD}@${ELASTIC_HOST:8};\
    for index in ${MIGRATION_INDICES//,/ }; do \
+     aws s3 cp s3://${AWS_S3_BUCKET}/migration-v2_${index}.json .
      migration_index=restored_${index}; \
      echo 'Migrating '${migration_index}'...'; \
-     elasticdump --s3AccessKeyId=${AWS_ACCESS_KEY_ID} --s3SecretAccessKey=${AWS_SECRET_ACCESS_KEY} --input=s3://${AWS_S3_BUCKET}/migration-v2_${index}.json --output=${ELASTIC_AUTH_HOST}/${migration_index} --limit=${ELASTICDUMP_LIMIT} --offset=${ELASTICDUMP_OFFSET} ; \
+     elasticdump --input=./migration-v2_${index}.json --output=${ELASTIC_AUTH_HOST}/${migration_index} --limit=${ELASTICDUMP_LIMIT} --offset=${ELASTICDUMP_OFFSET} --concurrency=${ELASTICDUMP_CONCURRENCY} --concurrencyInterval=${ELASTICDUMP_CONCURRENCY_INTERVAL} --intervalCap=${ELASTICDUMP_INTERVAL_CAP} ; \
+     rm -f migration-v2_${index}.json ; \
    done"
           env:
           - name: ELASTIC_HOST
@@ -200,6 +202,12 @@ objects:
             value: "${ELASTICDUMP_LIMIT}"
           - name: ELASTICDUMP_OFFSET
             value: "${ELASTICDUMP_OFFSET}"
+          - name: ELASTICDUMP_CONCURRENCY
+            value: "${ELASTICDUMP_CONCURRENCY}"
+          - name: ELASTICDUMP_CONCURRENCY_INTERVAL
+            value: "${ELASTICDUMP_CONCURRENCY_INTERVAL}"
+          - name: ELASTICDUMP_INTERVAL_CAP
+            value: "${ELASTICDUMP_INTERVAL_CAP}"
           - name: AWS_ACCESS_KEY_ID
             valueFrom:
               secretKeyRef:
@@ -268,3 +276,9 @@ parameters:
   value: "0"
 - name: MIGRATION_INDICES
   value: "assisted-service-events_2021-03"
+- name: ELASTICDUMP_CONCURRENCY
+  value: "100"
+- name: ELASTICDUMP_CONCURRENCY_INTERVAL
+  value: "1000"
+- name: ELASTICDUMP_INTERVAL_CAP
+  value: "100"
