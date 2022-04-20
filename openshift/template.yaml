@@ -184,7 +184,7 @@ objects:
           - "-c"
           - "ELASTIC_AUTH_HOST=https://${ELASTIC_USER}:${ELASTIC_PASSWORD}@${ELASTIC_HOST:8};\
    for index in ${MIGRATION_INDICES//,/ }; do \
-     aws s3 cp s3://${AWS_S3_BUCKET}/migration-v2_${index}.json .
+     aws s3 cp s3://${AWS_S3_BUCKET}/migration-v2_${index}.json . ;\
      migration_index=restored_${index}; \
      echo 'Migrating '${migration_index}'...'; \
      elasticdump --input=./migration-v2_${index}.json --output=${ELASTIC_AUTH_HOST}/${migration_index} --limit=${ELASTICDUMP_LIMIT} --offset=${ELASTICDUMP_OFFSET} --concurrency=${ELASTICDUMP_CONCURRENCY} --concurrencyInterval=${ELASTICDUMP_CONCURRENCY_INTERVAL} --intervalCap=${ELASTICDUMP_INTERVAL_CAP} ; \
