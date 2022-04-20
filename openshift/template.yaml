@@ -234,7 +234,7 @@ objects:
                 key: master_user_password
                 name: elastic-master-credentials
           image: ${ELASTICDUMP_IMAGE}
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: ${ELASTICDUMP_IMAGE_PULL_POLICY}
           name: elastic-dump
         restartPolicy: Never
 parameters:
@@ -270,6 +270,8 @@ parameters:
   value: "march-2021"
 - name: ELASTICDUMP_IMAGE
   value: "quay.io/app-sre/elasticdump:v6.82.3"
+- name: ELASTICDUMP_IMAGE_PULL_POLICY
+  value: 'Always'
 - name: ELASTICDUMP_LIMIT
   value: "100"
 - name: ELASTICDUMP_OFFSET
