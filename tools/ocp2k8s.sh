@@ -7,8 +7,6 @@ template_file=${SCRIPT_DIR}/../openshift/template.yaml
 export IMAGE_NAME=$(echo $image | cut -d: -f1)
 export IMAGE_TAG=$(echo $image | cut -d: -f2)
 export IMAGE_PULL_POLICY=Never
-export SUSPEND_JOBS="true"
-export ELASTICDUMP_IMAGE="elasticdump/elasticsearch-dump:v6.82.3"
 
 # Get currently exported variables
 current_envs=$(env | grep -f <(oc process --local=true -f openshift/template.yaml --parameters=true | tail -n+2 | awk '{ print $1 }') | tr '\n' ' ')
