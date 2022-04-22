@@ -1,8 +1,6 @@
 CONTAINER_COMMAND := $(shell ./tools/utils.sh get_container_runtime_command)
 TAG := $(or ${TAG},latest)
-ELASTICDUMP_TAG := $(or ${ELASTICDUMP_TAG}, v6.82.3)
 ASSISTED_EVENTS_SCRAPE_IMAGE := $(or $(ASSISTED_EVENTS_SCRAPE_IMAGE),quay.io/edge-infrastructure/assisted-events-scrape:$(TAG))
-ELASTICDUMP_IMAGE := $(or $(ELASTICDUMP_IMAGE),quay.io/app-sre/elasticdump:$(ELASTICDUMP_TAG))
 TEST_NAMESPACE := assisted-events-scrape-test
 
 install_assisted_service_client:
@@ -10,9 +8,6 @@ install_assisted_service_client:
 
 build-image:
 	$(CONTAINER_COMMAND) build $(CONTAINER_BUILD_EXTRA_PARAMS) -t $(ASSISTED_EVENTS_SCRAPE_IMAGE) .
-
-build-elasticdump-image:
-	$(CONTAINER_COMMAND) build $(CONTAINER_BUILD_EXTRA_PARAMS) -t $(ELASTICDUMP_IMAGE) . -f Dockerfile.elasticdump
 
 build-wheel:
 	rm -rf ./dist ./build
