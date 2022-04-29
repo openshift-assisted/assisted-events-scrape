@@ -1,11 +1,10 @@
 import re
 import time
-import hashlib
 import json
-import elasticsearch
-from utils import log
+from utils import log, get_event_id
 from config import ScraperConfig
 from events_scrape import InventoryClient
+import elasticsearch
 from . import process
 
 MAX_EVENTS = 5000
@@ -13,14 +12,14 @@ UUID_REGEX = r'[a-f0-9]{8}-?[a-f0-9]{4}-?4[a-f0-9]{3}-?[89ab][a-f0-9]{3}-?[a-f0-
 
 
 class ClusterEventsStorage:
-    @staticmethod
-    def create_with_inventory_client(inventory_client: InventoryClient,
+    @classmethod
+    def create_with_inventory_client(cls, inventory_client: InventoryClient,
                                      config: ScraperConfig) -> 'ClusterEventsStorage':
         http_auth = None
         if config.elasticsearch.username:
             http_auth = (config.elasticsearch.username, config.elasticsearch.password)
         es_client = elasticsearch.Elasticsearch(config.elasticsearch.host, http_auth=http_auth)
-        return ClusterEventsStorage(inventory_client, es_client, config.inventory_url, config.elasticsearch.index)
+        return cls(inventory_client, es_client, config.inventory_url, config.elasticsearch.index)
 
     def __init__(self, assisted_client, es_client, inventory_url, index):
         self._client = assisted_client
@@ -29,12 +28,7 @@ class ClusterEventsStorage:
         self._index = index
         self._cache_event_count_per_cluster = {}
 
-    def __get_metadata_json(self, cluster: dict):
-        d = {'cluster': cluster}
-        d.update(self._client.get_versions())
-        return d
-
-    def store(self, cluster, event_list):
+    def store(self, component_versions, cluster, event_list):
         cluster_id = cluster["id"]
 
         event_count = len(event_list)
@@ -42,23 +36,24 @@ class ClusterEventsStorage:
             log.info(f"Cluster {cluster_id} has {event_count} event records, logging only {MAX_EVENTS}")
             event_list = event_list[:MAX_EVENTS]
 
-        metadata_json = self.__get_metadata_json(cluster)
+        metadata_json = get_metadata_json(cluster, component_versions)
 
         cluster_bash_data = process_metadata(metadata_json)
         event_names = get_cluster_object_names(cluster_bash_data)
 
-        self.process_and_log_events(cluster_bash_data, event_list, event_names)
+        events = self.process_events(cluster_bash_data, event_list, event_names)
+        self.store_events(events)
 
         if self.does_cluster_needs_full_update(cluster_id, event_list):
             log.info(f"Cluster {cluster_id} logged events are not same as the event count, logging all clusters events")
-            self.process_and_log_events(cluster_bash_data, event_list, event_names, False)
+            events = self.process_events(cluster_bash_data, event_list, event_names)
+            self.store_events(events, only_new_events=False)
 
-    def process_and_log_events(self, cluster_bash_data, event_list, event_names, only_new_events=True):
+    def process_events(self, cluster_bash_data, event_list, event_names):
         for event in event_list[::-1]:
             if process.is_event_skippable(event):
                 continue
 
-            doc_id = get_doc_id(event)
             cluster_bash_data["no_name_message"] = get_no_name_message(event["message"], event_names)
             cluster_bash_data["inventory_url"] = self._inventory_url
 
@@ -66,11 +61,14 @@ class ClusterEventsStorage:
                 event["event.props"] = json.loads(event["props"])
 
             process_event_doc(event, cluster_bash_data)
-            ret = self.log_doc(cluster_bash_data, doc_id)
-
+            yield cluster_bash_data
             for key in event:
                 _ = cluster_bash_data.pop(key, None)
 
+    def store_events(self, events, only_new_events=True):
+        for event in events:
+            doc_id = get_event_id(event)
+            ret = self.log_doc(event, doc_id)
             if not ret and only_new_events:
                 break
 
@@ -128,11 +126,9 @@ def process_metadata(metadata_json):
     return p.get_processed_json()
 
 
-def get_doc_id(event_json):
-    id_str = event_json["event_time"] + event_json["cluster_id"] + event_json["message"]
-    _id = int(hashlib.md5(id_str.encode('utf-8')).hexdigest(), 16)
-    return str(_id)
-
-
 def process_event_doc(event_data, cluster_bash_data):
     cluster_bash_data.update(event_data)
+
+
+def get_metadata_json(cluster: dict, component_versions: dict):
+    return {'cluster': cluster, **component_versions}

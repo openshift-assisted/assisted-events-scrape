@@ -22,9 +22,17 @@ if [[ "${platform}" == "ocp" ]]; then
     ${cli} process --local=true -f assisted-events-scrape/tests/integration/ci-manifests/ --output=yaml --param ELASTICSEARCH_ROUTE_HOST=$(./tools/get_ocp_route_host.sh) | ${cli} apply ${ns} -f -
 fi
 
-
 ${cli} wait ${ns} --timeout=120s --for=condition=Available deployment --all
 ${cli} wait ${ns} --timeout=300s --for=condition=Ready pods --all
+
+# Write elasticsearch index templates
+if [[ "${platform}" == "ocp" ]]; then
+    es_host=$(./tools/get_ocp_route_host.sh):80
+else
+    es_host=$(./tools/get_elasticsearch_endpoint.sh ${namespace})
+fi
+
+./tools/create_elastic_templates.sh ${es_host}
 
 # Deploy assisted-events-scraper
 if [[ "${platform}" == "ocp" ]]; then

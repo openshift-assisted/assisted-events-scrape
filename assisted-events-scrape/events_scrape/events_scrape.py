@@ -8,11 +8,10 @@ import urllib3
 import sentry_sdk
 
 from events_scrape import ClientFactory
-from repositories import ClusterRepository, EventRepository
-from storage import ClusterEventsStorage
+from storage import ClusterEventsStorage, ElasticsearchStorage
 from workers import ClusterEventsWorker, ClusterEventsWorkerConfig
 from utils import ErrorCounter, Changes, log
-from config import ScraperConfig
+from config import ScraperConfig, EventStoreConfig
 
 WAIT_TIME = 60
 
@@ -27,9 +26,6 @@ class ScrapeEvents:
         self._client = ClientFactory.create_client(url=config.inventory_url, offline_token=config.offline_token)
         self._cluster_events_storage = ClusterEventsStorage.create_with_inventory_client(self._client, config)
 
-        self._cluster_repo = ClusterRepository(self._client)
-        self._event_repo = EventRepository(self._client)
-
         self._errors_before_restart = config.errors_before_restart
         self._max_idle_minutes = config.max_idle_minutes
         self._changes = Changes()
@@ -39,10 +35,11 @@ class ScrapeEvents:
             config.n_workers,
             config.sentry,
             self._error_counter,
-            self._changes
+            self._changes,
+            EventStoreConfig.create_from_env()
         )
-        self._worker = ClusterEventsWorker(worker_config, self._cluster_repo, self._event_repo,
-                                           self._cluster_events_storage)
+        es_store = ElasticsearchStorage.create()
+        self._worker = ClusterEventsWorker(worker_config, self._client, self._cluster_events_storage, es_store)
 
     def is_idle(self):
         return not self._changes.has_changed_in_last_minutes(self._max_idle_minutes)
@@ -54,7 +51,7 @@ class ScrapeEvents:
         return self._error_counter.get_errors() > self._errors_before_restart
 
     def run_service(self):
-        clusters = self._cluster_repo.list_clusters()
+        clusters = self._client.clusters_list()
 
         if not clusters:
             log.warning("No clusters were found.")
