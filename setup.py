@@ -34,6 +34,7 @@ setuptools.setup(
     entry_points={
         'console_scripts': [
             'events_scrape = events_scrape.events_scrape:main',
+            'ccx_export = ccx_export:export_events',
         ],
     },
     include_package_data=True,

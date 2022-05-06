@@ -3,7 +3,8 @@
   "index_patterns" : [
     ".events",
     ".clusters",
-    ".component_versions"
+    ".component_versions",
+    "test*"
   ],
   "settings" : {
     "index" : {

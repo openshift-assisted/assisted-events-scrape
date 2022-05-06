@@ -21,7 +21,7 @@ def get_rule(path: str, body: str, queryStringParameters=None) -> dict:
             "body": body
         }
     }
-    if queryStringParameters is not None:
+    if queryStringParameters:
         rule["httpRequest"]["queryStringParameters"] = queryStringParameters
     return rule
 

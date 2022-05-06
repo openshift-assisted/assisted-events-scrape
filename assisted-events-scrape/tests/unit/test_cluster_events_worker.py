@@ -170,9 +170,12 @@ class TestClusterEventsWorker:
 
     def _expect_store_normalized_events(self):
         expected_calls = [
-            call(index=self.config.events.component_versions_events_index, documents=ANY, id_fn=get_dict_hash),
-            call(index=self.config.events.cluster_events_index, documents=ANY, id_fn=get_dict_hash),
-            call(index=self.config.events.events_index, documents=ANY, id_fn=get_event_id),
+            call(index=self.config.events.component_versions_events_index,
+                 documents=ANY, id_fn=get_dict_hash, enrich_document_fn=ANY),
+            call(index=self.config.events.cluster_events_index, filter_by=ANY,
+                 documents=ANY, id_fn=get_dict_hash),
+            call(index=self.config.events.events_index, documents=ANY, filter_by=ANY,
+                 id_fn=get_event_id),
         ]
         self.es_store.store_changes.assert_has_calls(expected_calls)
 
