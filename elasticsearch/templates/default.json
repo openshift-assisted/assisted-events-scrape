@@ -1,0 +1,33 @@
+{
+  "order" : 0,
+  "index_patterns" : [
+    ".events",
+    ".clusters",
+    ".component_versions"
+  ],
+  "settings" : {
+    "index" : {
+      "number_of_shards" : "1",
+      "number_of_replicas" : "0",
+      "mapping" : {
+        "total_fields" : {
+          "limit" : "10000"
+        }
+      }
+    }
+  },
+  "mappings" : {
+    "dynamic_templates" : [
+      {
+        "strings" : {
+          "mapping" : {
+            "ignore_above" : 20000,
+            "type" : "keyword"
+          },
+          "match_mapping_type" : "string"
+        }
+      }
+    ]
+  },
+  "aliases" : { }
+}

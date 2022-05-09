@@ -1,17 +1,41 @@
 from config import ElasticsearchConfig
 import elasticsearch
 import waiting
-import time
+from waiting import TimeoutExpired
 import pytest
 
-INIT_DELAY_SECONDS = 10
 ALL_EVENTS_NUMBER = 101
+ASSERTION_TIMEOUT_SECONDS = 2
+ASSERTION_WAIT_SECONDS = 1
 
 
 class TestIntegration:
     def test_all_docs(self, _wait_for_elastic):
-        documents_count = self._es_client.count(index=self._config.index)['count']
-        assert(documents_count == ALL_EVENTS_NUMBER)
+        expected_count_idx = {
+            self._config.index: ALL_EVENTS_NUMBER,
+            ".events": ALL_EVENTS_NUMBER,
+        }
+
+        # As elasticsearch is eventually consistent, make sure data is synced
+        self._es_client.indices.refresh(index=self._config.index)
+
+        def check_document_count(index, expected_count):
+            documents_count = self._es_client.count(index=index)['count']
+            return documents_count == expected_count
+
+        for index, expected_count in expected_count_idx.items():
+            try:
+                waiting.wait(
+                    lambda: check_document_count(index, expected_count),
+                    timeout_seconds=ASSERTION_TIMEOUT_SECONDS,
+                    sleep_seconds=ASSERTION_WAIT_SECONDS,
+                    waiting_for="document count"
+                )
+                # Wait function succeeded, it means doc count was checked within
+                assert True
+            except TimeoutExpired:
+                # Wait function expired, it means doc count could not match in the given time
+                assert False
 
     @pytest.fixture
     def _wait_for_elastic(self):
@@ -28,7 +52,5 @@ class TestIntegration:
     def _is_elastic_ready(self) -> bool:
         is_elastic_ready = self._es_client.indices.exists(index=self._config.index)
         if is_elastic_ready:
-            # As elastic is eventually consistent, we need to make sure we wait more than refresh rate
-            time.sleep(INIT_DELAY_SECONDS)
             return True
         return False
