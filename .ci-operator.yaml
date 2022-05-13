@@ -1,3 +1,4 @@
 build_root_image:
-  project_image:
-    dockerfile_path: Dockerfile.build
+  name: release
+  namespace: openshift
+  tag: rhel-8-release-golang-1.17-openshift-4.11
