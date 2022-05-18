@@ -1,7 +1,7 @@
 from typing import List, Callable, Iterable
 from clients import create_es_client_from_env
-from elasticsearch import Elasticsearch, helpers
-from elasticsearch.exceptions import NotFoundError
+from opensearchpy import OpenSearch, helpers
+from opensearchpy.exceptions import NotFoundError
 
 DEFAULT_SCAN_SIZE = 500
 DEFAULT_SCROLL_WINDOW = '5m'
@@ -16,7 +16,7 @@ class ElasticsearchStorage:
         es_client = create_es_client_from_env()
         return cls(es_client)
 
-    def __init__(self, es_client: Elasticsearch):
+    def __init__(self, es_client: OpenSearch):
         self._es_client = es_client
 
     def store_changes(self, index: str, documents: List[dict], id_fn: Callable[[dict], str],

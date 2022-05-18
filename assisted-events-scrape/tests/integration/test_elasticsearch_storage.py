@@ -1,5 +1,5 @@
 from config import ElasticsearchConfig
-import elasticsearch
+import opensearchpy
 import hashlib
 import json
 from storage import ElasticsearchStorage
@@ -8,7 +8,7 @@ from storage import ElasticsearchStorage
 class TestElasticsearchStorage:
     def setup(self):
         config = ElasticsearchConfig.create_from_env()
-        self._es_client = elasticsearch.Elasticsearch(config.host)
+        self._es_client = opensearchpy.OpenSearch(config.host)
         self._es_store = ElasticsearchStorage(self._es_client)
         self._index = "testindex"
 
