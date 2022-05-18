@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from typing import List
 import queue
 from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime
 from utils import ErrorCounter, Changes, log, get_event_id, get_dict_hash
 from storage import ClusterEventsStorage, ElasticsearchStorage
 from events_scrape import InventoryClient
@@ -9,9 +10,6 @@ from sentry_sdk import capture_exception
 from config import SentryConfig, EventStoreConfig
 from assisted_service_client.rest import ApiException
 
-EVENTS_INDEX = ".events"
-CLUSTER_EVENTS_INDEX = ".clusters"
-COMPONENT_VERSIONS_EVENTS_INDEX = ".component_versions"
 EVENT_CATEGORIES = ["user", "metrics"]
 
 
@@ -89,7 +87,7 @@ class ClusterEventsWorker:
         This is needed for python 3.8 and lower. With python 3.9 we can pass a parameter:
         self._executor.shutdown(wait=False, cancel_futures=True)
         """
-        if self._executor is not None:
+        if self._executor:
             # Do not accept further tasks
             self._executor.shutdown(wait=False)
             self._drain_queue()
@@ -100,22 +98,36 @@ class ClusterEventsWorker:
                 work_item = self._executor._work_queue.get_nowait()  # pylint: disable=protected-access
             except queue.Empty:
                 break
-            if work_item is not None:
+            if work_item:
                 work_item.future.cancel()
 
     def _store_normalized_events(self, component_versions, cluster, event_list):
         try:
+            cluster_id_filter = {
+                "term": {
+                    "cluster_id": cluster["id"]
+                }
+            }
             self._es_store.store_changes(
-                index=COMPONENT_VERSIONS_EVENTS_INDEX,
+                index=EventStoreConfig.COMPONENT_VERSIONS_EVENTS_INDEX,
                 documents=[component_versions],
-                id_fn=get_dict_hash)
+                id_fn=get_dict_hash,
+                enrich_document_fn=add_timestamp
+            )
             self._es_store.store_changes(
-                index=CLUSTER_EVENTS_INDEX,
+                index=EventStoreConfig.CLUSTER_EVENTS_INDEX,
                 documents=[cluster],
-                id_fn=get_dict_hash)
+                id_fn=get_dict_hash,
+                filter_by=cluster_id_filter)
             self._es_store.store_changes(
-                index=EVENTS_INDEX,
+                index=EventStoreConfig.EVENTS_INDEX,
                 documents=event_list,
-                id_fn=get_event_id)
+                id_fn=get_event_id,
+                filter_by=cluster_id_filter)
         except Exception as e:
             self.__handle_unexpected_error(e, f'Error while storing normalized events for cluster {cluster["id"]}')
+
+
+def add_timestamp(doc: dict) -> dict:
+    doc["timestamp"] = datetime.utcnow().isoformat()
+    return doc

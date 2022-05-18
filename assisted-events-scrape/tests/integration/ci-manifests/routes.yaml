@@ -20,7 +20,27 @@ objects:
       kind: Service
       name: elasticsearch-master
       weight: 100
+- apiVersion: route.openshift.io/v1
+  kind: Route
+  metadata:
+    annotations:
+      openshift.io/host.generated: "true"
+      haproxy.router.openshift.io/timeout: "3m"
+    labels:
+      app: ai-events-minio
+    name: minio-assisted
+  spec:
+    host: ${MINIO_ROUTE_HOST}
+    port:
+      targetPort: "9000"
+    to:
+      kind: Service
+      name: ai-events-minio
+      weight: 100
 parameters:
 - name: ELASTICSEARCH_ROUTE_HOST
+  value: ""
+  required: true
+- name: MINIO_ROUTE_HOST
   value: ""
   required: true

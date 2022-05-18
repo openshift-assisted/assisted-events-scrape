@@ -54,7 +54,7 @@ class InventoryClient(object):
         def refresh_api_key(config: Configuration) -> None:
             # Get the properly padded key segment
             auth = config.api_key.get("Authorization", None)
-            if auth is not None:
+            if auth:
                 segment = auth.split(".")[1]
                 padding = len(segment) % 4
                 segment = segment + padding * "="

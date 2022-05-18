@@ -1,6 +1,7 @@
 #!/bin/bash -eu
 namespace=$1
-shift 1
+service=$2
+shift 2
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
@@ -12,9 +13,9 @@ if [ -z "${container_id}" ]; then
     echo "Could not find container ID for kind"
     exit 1;
 fi
-port=$(kubectl -n ${namespace} get svc elasticsearch-master -o jsonpath='{.spec.ports[0].nodePort}')
+port=$(kubectl -n ${namespace} get svc $service -o jsonpath='{.spec.ports[0].nodePort}')
 if [ -z "${port}" ]; then
-    echo "Could not find nodePort for elasticsearch svc. Is it NodePort type?"
+    echo "Could not find nodePort for svc ${service}. Is it NodePort type?"
     exit 1;
 fi
 

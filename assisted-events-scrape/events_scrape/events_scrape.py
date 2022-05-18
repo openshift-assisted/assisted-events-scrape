@@ -38,7 +38,7 @@ class ScrapeEvents:
             self._changes,
             EventStoreConfig.create_from_env()
         )
-        es_store = ElasticsearchStorage.create()
+        es_store = ElasticsearchStorage.create_from_env()
         self._worker = ClusterEventsWorker(worker_config, self._client, self._cluster_events_storage, es_store)
 
     def is_idle(self):

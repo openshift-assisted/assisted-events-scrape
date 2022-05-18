@@ -1,0 +1,7 @@
+# This file manages secrets leaking
+# More info https://github.com/zricethezav/gitleaks/
+
+[allowlist]
+paths = [
+      '''assisted-events-scrape/tests/integration/manifests/minio.yaml'''      
+]

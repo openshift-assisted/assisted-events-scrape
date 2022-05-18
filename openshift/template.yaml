@@ -165,6 +165,62 @@ objects:
             items:
             - key: htpasswd
               path: htpasswd
+- apiVersion: batch/v1
+  kind: CronJob
+  metadata:
+    name: ccx-export
+  spec:
+    schedule: "0 2 * * *"
+    jobTemplate:
+      spec:
+        ttlSecondsAfterFinished: 600
+        template:
+          spec:
+            containers:
+            - name: ccx-s3-export
+              image: ${IMAGE_NAME}:${IMAGE_TAG}
+              imagePullPolicy: ${IMAGE_PULL_POLICY}
+              command:
+              - ccx_export
+              env:
+              - name: EVENT_EXPORT_STREAM_CHUNK_SIZE
+                value: ${EVENT_EXPORT_STREAM_CHUNK_SIZE}
+              - name: AWS_S3_BUCKET
+                valueFrom:
+                  secretKeyRef:
+                    key: bucket
+                    name: ${AWS_S3_SECRET_NAME}
+              - name: AWS_S3_ENDPOINT
+                valueFrom:
+                  secretKeyRef:
+                    key: endpoint
+                    name: ${AWS_S3_SECRET_NAME}
+              - name: AWS_ACCESS_KEY_ID
+                valueFrom:
+                  secretKeyRef:
+                    key: aws_access_key_id
+                    name: ${AWS_S3_SECRET_NAME}
+              - name: AWS_SECRET_ACCESS_KEY
+                valueFrom:
+                  secretKeyRef:
+                    key: aws_secret_access_key
+                    name: ${AWS_S3_SECRET_NAME}
+              - name: ES_SERVER
+                valueFrom:
+                  secretKeyRef:
+                    key: endpoint
+                    name: assisted-installer-elasticsearch
+              - name: ES_USER
+                valueFrom:
+                  secretKeyRef:
+                    key: master_user_name
+                    name: elastic-master-credentials
+              - name: ES_PASS
+                valueFrom:
+                  secretKeyRef:
+                    key: master_user_password
+                    name: elastic-master-credentials
+            restartPolicy: OnFailure
 parameters:
 - name: IMAGE_NAME
   value: quay.io/app-sre/assisted-events-scrape
@@ -191,3 +247,7 @@ parameters:
   value: 'INFO'
 - name: IMAGE_PULL_POLICY
   value: 'Always'
+- name: AWS_S3_SECRET_NAME
+  value: 'ai-ccx-integration'
+- name: EVENT_EXPORT_STREAM_CHUNK_SIZE
+  value: "1000"

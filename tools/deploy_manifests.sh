@@ -19,17 +19,19 @@ ${cli} get ns ${namespace} || ${cli} create ns ${namespace}
 ${cli} apply ${ns} -f assisted-events-scrape/tests/integration/manifests
 
 if [[ "${platform}" == "ocp" ]]; then
-    ${cli} process --local=true -f assisted-events-scrape/tests/integration/ci-manifests/ --output=yaml --param ELASTICSEARCH_ROUTE_HOST=$(./tools/get_ocp_route_host.sh) | ${cli} apply ${ns} -f -
+    ${cli} process --local=true -f assisted-events-scrape/tests/integration/ci-manifests/ --output=yaml --param ELASTICSEARCH_ROUTE_HOST=$(./tools/get_ocp_route_host.sh elasticsearch-assisted) MINIO_ROUTE_HOST=$(./tools/get_ocp_route_host.sh minio-assisted) | ${cli} apply ${ns} -f -
 fi
 
 ${cli} wait ${ns} --timeout=120s --for=condition=Available deployment --all
-${cli} wait ${ns} --timeout=300s --for=condition=Ready pods --all
+${cli} wait ${ns} --timeout=300s --for=condition=Ready pods -l app=elasticsearch-master
+${cli} wait ${ns} --timeout=300s --for=condition=Ready pods -l app=mockserver
+${cli} wait ${ns} --timeout=300s --for=condition=Ready pods -l app=minio
 
 # Write elasticsearch index templates
 if [[ "${platform}" == "ocp" ]]; then
-    es_host=$(./tools/get_ocp_route_host.sh):80
+    es_host=$(./tools/get_ocp_route_host.sh elasticsearch-assisted):80
 else
-    es_host=$(./tools/get_elasticsearch_endpoint.sh ${namespace})
+    es_host=$(./tools/get_endpoint.sh ${namespace} elasticsearch-master)
 fi
 
 ./tools/create_elastic_templates.sh ${es_host}
@@ -42,5 +44,10 @@ if [[ "${platform}" == "ocp" ]]; then
 else
     ./tools/ocp2k8s.sh ${image} | ${cli} apply ${ns} -f -
 fi
+
 ${cli} wait ${ns} --timeout=30s --for=condition=Available deployment --all
-${cli} wait ${ns} --timeout=30s --for=condition=Ready pods --all
+${cli} wait ${ns} --timeout=30s --for=condition=Ready pods -l app=assisted-events-scrape
+
+${cli} ${ns} create job test-s3 --from=cronjob/ccx-export
+${cli} wait ${ns} --timeout=30s --for=condition=complete job test-s3
+${cli} delete ${ns} job test-s3

@@ -2,6 +2,7 @@ import re
 import time
 import json
 from utils import log, get_event_id
+from clients import create_es_client_from_env
 from config import ScraperConfig
 from events_scrape import InventoryClient
 import elasticsearch
@@ -15,10 +16,7 @@ class ClusterEventsStorage:
     @classmethod
     def create_with_inventory_client(cls, inventory_client: InventoryClient,
                                      config: ScraperConfig) -> 'ClusterEventsStorage':
-        http_auth = None
-        if config.elasticsearch.username:
-            http_auth = (config.elasticsearch.username, config.elasticsearch.password)
-        es_client = elasticsearch.Elasticsearch(config.elasticsearch.host, http_auth=http_auth)
+        es_client = create_es_client_from_env()
         return cls(inventory_client, es_client, config.inventory_url, config.elasticsearch.index)
 
     def __init__(self, assisted_client, es_client, inventory_url, index):

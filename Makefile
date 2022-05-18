@@ -40,15 +40,17 @@ unit-test:
 
 ci-integration-test:
 	./tools/deploy_manifests.sh ocp $(ASSISTED_EVENTS_SCRAPE_IMAGE) $(TEST_NAMESPACE)
-	ES_SERVER=$$(./tools/get_ocp_route_host.sh):80 ES_INDEX=assisted-service-events pytest assisted-events-scrape/tests/integration
+	./tools/run_integration_test.sh $(TEST_NAMESPACE) ocp
 
-integration-test: build-image
+deploy-kind: build-image
 	kind get clusters | grep assisted-events-scrape || kind create cluster --name assisted-events-scrape
 	kind --name assisted-events-scrape export kubeconfig
 	kubectl apply -f .kind/daemonset.yaml
 	kind load docker-image --name assisted-events-scrape $(ASSISTED_EVENTS_SCRAPE_IMAGE)
 	./tools/deploy_manifests.sh kind $(ASSISTED_EVENTS_SCRAPE_IMAGE) $(TEST_NAMESPACE)
-	ES_SERVER=$$(./tools/get_elasticsearch_endpoint.sh $(TEST_NAMESPACE)) ES_INDEX=assisted-service-events pytest assisted-events-scrape/tests/integration
+
+integration-test: deploy-kind
+	./tools/run_integration_test.sh $(TEST_NAMESPACE) kind
 
 cleanup-integration-test:
 	kind delete cluster --name assisted-events-scrape || true
