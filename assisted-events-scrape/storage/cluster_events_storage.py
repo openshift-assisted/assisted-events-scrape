@@ -5,7 +5,7 @@ from utils import log, get_event_id
 from clients import create_es_client_from_env
 from config import ScraperConfig
 from events_scrape import InventoryClient
-import elasticsearch
+import opensearchpy
 from . import process
 
 MAX_EVENTS = 5000
@@ -95,7 +95,7 @@ class ClusterEventsStorage:
     def log_doc(self, doc, id_):
         try:
             res = self._es_client.create(index=self._index, body=doc, id=id_)
-        except elasticsearch.exceptions.ConflictError:
+        except opensearchpy.exceptions.ConflictError:
             log.debug("Hit logged event")
             return None
         return res

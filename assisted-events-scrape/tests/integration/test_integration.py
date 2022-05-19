@@ -1,5 +1,5 @@
 from config import ElasticsearchConfig
-import elasticsearch
+import opensearchpy
 import waiting
 import boto3
 import os
@@ -71,7 +71,7 @@ class TestIntegration:
     @pytest.fixture
     def _wait_for_elastic(self):
         self._config = ElasticsearchConfig.create_from_env()
-        self._es_client = elasticsearch.Elasticsearch(self._config.host)
+        self._es_client = opensearchpy.OpenSearch(self._config.host)
         waiting.wait(
             self._is_elastic_ready,
             timeout_seconds=300,

@@ -6,12 +6,12 @@ from config import EventExportConfig
 from utils import get_dict_hash, log
 from events import EventStream
 from storage import DateOffset, DateOffsetRepository, ObjectStorageWriter
-from elasticsearch.exceptions import NotFoundError
-from elasticsearch import Elasticsearch, helpers
+from opensearchpy.exceptions import NotFoundError
+from opensearchpy import OpenSearch, helpers
 
 
 class EventsExporter:
-    def __init__(self, config: EventExportConfig, es_client: Elasticsearch,
+    def __init__(self, config: EventExportConfig, es_client: OpenSearch,
                  object_writer: ObjectStorageWriter, offset_repo: DateOffsetRepository):
         self._config = config
         self._es_client = es_client

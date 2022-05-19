@@ -1,8 +1,8 @@
 from typing import Iterable, List
 from dataclasses import dataclass
 from dateutil.parser import parse
-from elasticsearch import Elasticsearch, helpers
-from elasticsearch.exceptions import NotFoundError
+from opensearchpy import OpenSearch, helpers
+from opensearchpy.exceptions import NotFoundError
 
 
 @dataclass
@@ -36,7 +36,7 @@ class DateOffset:
 
 
 class DateOffsetRepository:
-    def __init__(self, es_client: Elasticsearch, offset_index: str):
+    def __init__(self, es_client: OpenSearch, offset_index: str):
         self._es_client = es_client
         self._offset_index = offset_index
 
