@@ -67,7 +67,7 @@ class TestElasticsearchStorage:
 
         assert len(all_docs["hits"]["hits"]) == 1
 
-    def test_store_changes_with_enrich_document_fn(self):
+    def test_store_changes_with_transform_document_fn(self):
         def add_qux(x: dict) -> dict:
             x["qux"] = "foobar"
             return x
@@ -79,7 +79,7 @@ class TestElasticsearchStorage:
             index=self._index,
             documents=docs,
             id_fn=get_doc_checksum,
-            enrich_document_fn=add_qux
+            transform_document_fn=add_qux
         )
 
         # make sure the value is visible in the index
@@ -91,7 +91,7 @@ class TestElasticsearchStorage:
         assert "qux" in all_docs["hits"]["hits"][0]["_source"]
         assert all_docs["hits"]["hits"][0]["_source"]["qux"] == "foobar"
 
-        # still won't add a new document if we try without enrich document fn
+        # still won't add a new document if we try without transform document fn
         self._es_store.store_changes(
             index=self._index,
             documents=docs,

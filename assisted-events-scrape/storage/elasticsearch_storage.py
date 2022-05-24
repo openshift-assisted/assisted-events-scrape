@@ -20,7 +20,7 @@ class ElasticsearchStorage:
         self._es_client = es_client
 
     def store_changes(self, index: str, documents: List[dict], id_fn: Callable[[dict], str],
-                      enrich_document_fn: Callable[[dict], dict] = None, filter_by: dict = None):
+                      transform_document_fn: Callable[[dict], dict] = None, filter_by: dict = None):
         """
         Stores documents that are not already stored, by retrieving what is stored first.
         It is very important to filter by a reasonable key for performance purposes: if we won't
@@ -31,19 +31,19 @@ class ElasticsearchStorage:
         :param List[dict] documents: List of documents to be stored
         :param Callable[[dict], str] id_fn: Function to extract the ID from each document. Document is input,
         and the output should be a string
-        :param Callable[[dict], dict] enrich_document_fn: Function to enrich document. Useful to add custom fields
+        :param Callable[[dict], dict] transform_document_fn: Function to transform document. Useful to add/remove fields
         :param dict filter_by: Filter document when scanning. This is useful for performance
         """
         actions = self._get_new_documents_actions(
             index=index,
             documents=documents,
             id_fn=id_fn,
-            enrich_document_fn=enrich_document_fn,
+            transform_document_fn=transform_document_fn,
             filter_by=filter_by)
         return helpers.bulk(self._es_client, actions)
 
     def _get_new_documents_actions(self, index: str, documents: List[dict],
-                                   id_fn: Callable[[dict], str], enrich_document_fn: Callable[[dict], dict],
+                                   id_fn: Callable[[dict], str], transform_document_fn: Callable[[dict], dict],
                                    filter_by: dict) -> Iterable[dict]:
         """
         Returns actions compatible with bulk payload for input documents that are not already stored.
@@ -52,7 +52,7 @@ class ElasticsearchStorage:
         :param List[dict] documents: List of documents to be stored
         :param Callable[[dict], str] id_fn: Function to extract the ID from each document. Document is input,
         and the output should be a string
-        :param Callable[[dict], dict] enrich_document_fn: Function to enrich document. Useful to add custom fields
+        :param Callable[[dict], dict] transform_document_fn: Function to transform document. Useful to add custom fields
         :param dict filter_by: Filter document when scanning. This is useful for performance
 
         :return Generator containing elasticsearch bulk actions.
@@ -72,8 +72,8 @@ class ElasticsearchStorage:
 
         existing_docs = helpers.scan(self._es_client, index=index, query=query)
 
-        if enrich_document_fn is None:
-            enrich_document_fn = identity
+        if transform_document_fn is None:
+            transform_document_fn = identity
 
         try:
             for d in existing_docs:
@@ -89,6 +89,6 @@ class ElasticsearchStorage:
                 yield {
                     "_index": index,
                     "_id": doc_id,
-                    "_source": enrich_document_fn(d),
+                    "_source": transform_document_fn(d),
                     "_op_type": "index"
                 }
