@@ -34,6 +34,8 @@ objects:
             - secretRef:
                 name: events-scrape
           env:
+          - name: EVENT_STORE_CLUSTER_EVENTS_IGNORE_FIELDS
+            value: "hosts.*.connectivity,hosts.*.progress"
           - name: SENTRY_DSN
             value: "${SENTRY_DSN}"
           - name: SENTRY_RELEASE

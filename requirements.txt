@@ -11,3 +11,4 @@ dataclasses~=0.8
 wheel
 smart-open[s3]~=5.2.1
 boto3~=1.22.6
+dpath~=2.0.6

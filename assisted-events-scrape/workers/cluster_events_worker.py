@@ -1,8 +1,11 @@
 from dataclasses import dataclass
 from typing import List
+from copy import deepcopy
 import queue
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
+import dpath.util
+from dpath.exceptions import PathNotFound
 from utils import ErrorCounter, Changes, log, get_event_id, get_dict_hash
 from storage import ClusterEventsStorage, ElasticsearchStorage
 from events_scrape import InventoryClient
@@ -23,7 +26,6 @@ class ClusterEventsWorkerConfig:
 
 
 class ClusterEventsWorker:
-
     def __init__(self, config: ClusterEventsWorkerConfig, ai_client: InventoryClient,
                  cluster_events_storage: ClusterEventsStorage, es_store: ElasticsearchStorage):
 
@@ -112,12 +114,12 @@ class ClusterEventsWorker:
                 index=EventStoreConfig.COMPONENT_VERSIONS_EVENTS_INDEX,
                 documents=[component_versions],
                 id_fn=get_dict_hash,
-                enrich_document_fn=add_timestamp
+                transform_document_fn=add_timestamp
             )
             self._es_store.store_changes(
                 index=EventStoreConfig.CLUSTER_EVENTS_INDEX,
                 documents=[cluster],
-                id_fn=get_dict_hash,
+                id_fn=self._cluster_checksum,
                 filter_by=cluster_id_filter)
             self._es_store.store_changes(
                 index=EventStoreConfig.EVENTS_INDEX,
@@ -126,6 +128,16 @@ class ClusterEventsWorker:
                 filter_by=cluster_id_filter)
         except Exception as e:
             self.__handle_unexpected_error(e, f'Error while storing normalized events for cluster {cluster["id"]}')
+
+    def _cluster_checksum(self, doc: dict) -> dict:
+        doc_copy = deepcopy(doc)
+        for field in self._config.events.cluster_events_ignore_fields:
+            try:
+                dpath.util.delete(doc_copy, field, separator=".")
+            except PathNotFound:
+                # if field is not there, no need to delete it, but don't fail
+                pass
+        return get_dict_hash(doc_copy)
 
 
 def add_timestamp(doc: dict) -> dict:

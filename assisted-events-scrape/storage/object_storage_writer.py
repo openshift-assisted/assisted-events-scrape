@@ -2,6 +2,7 @@ from typing import Iterable
 import json
 import boto3
 import smart_open
+import dpath.util
 from utils import log
 from config import ObjectStorageConfig
 from .offset import DateOffsetOptions, DateOffset
@@ -62,18 +63,14 @@ class ObjectStorageWriter:
 
     # pylint: disable=no-self-use
     def _get_partition_from_doc(self, doc: dict, partition_key: str) -> str:
-        return _get_dotkey_value(doc, partition_key)
+        try:
+            return dpath.util.get(doc, partition_key, separator=".")
+        except KeyError:
+            return None
 
     def _get_offset_from_doc(self, doc: dict, order_key: str) -> str:
-        return _get_dotkey_value(doc, order_key)
-    # pylint: enable=no-self-use
-
-
-def _get_dotkey_value(doc: dict, dotkey: str) -> str:
-    key_parts = dotkey.split(".")
-    d = doc
-    for key in key_parts:
-        if key not in d:
+        try:
+            return dpath.util.get(doc, order_key, separator=".")
+        except KeyError:
             return None
-        d = d[key]
-    return d
+    # pylint: enable=no-self-use
