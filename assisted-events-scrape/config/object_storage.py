@@ -20,5 +20,5 @@ class ObjectStorageConfig:
         return cls(
             get_env("AWS_ACCESS_KEY_ID"),
             get_env("AWS_SECRET_ACCESS_KEY"),
-            get_env("AWS_S3_ENDPOINT"),
+            endpoint,
             get_env("AWS_S3_BUCKET"))
