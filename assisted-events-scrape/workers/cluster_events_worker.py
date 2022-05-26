@@ -137,7 +137,13 @@ class ClusterEventsWorker:
             except PathNotFound:
                 # if field is not there, no need to delete it, but don't fail
                 pass
+        if "hosts" in doc_copy:
+            doc_copy["hosts"].sort(key=by_id)
         return get_dict_hash(doc_copy)
+
+
+def by_id(item: dict) -> str:
+    return item.get("id", None)
 
 
 def add_timestamp(doc: dict) -> dict:
