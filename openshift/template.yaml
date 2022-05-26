@@ -35,7 +35,7 @@ objects:
                 name: events-scrape
           env:
           - name: EVENT_STORE_CLUSTER_EVENTS_IGNORE_FIELDS
-            value: "hosts.*.connectivity,hosts.*.inventory,hosts.*.progress,hosts.*.checked_in_at,hosts.*.updated_at"
+            value: "${EVENT_STORE_CLUSTER_EVENTS_IGNORE_FIELDS}"
           - name: SENTRY_DSN
             value: "${SENTRY_DSN}"
           - name: SENTRY_RELEASE
@@ -253,3 +253,5 @@ parameters:
   value: 'ai-ccx-integration'
 - name: EVENT_EXPORT_STREAM_CHUNK_SIZE
   value: "1000"
+- name: EVENT_STORE_CLUSTER_EVENTS_IGNORE_FIELDS
+  value: "hosts.*.connectivity,hosts.*.inventory,hosts.*.progress,hosts.*.checked_in_at,hosts.*.updated_at"
