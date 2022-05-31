@@ -254,4 +254,4 @@ parameters:
 - name: EVENT_EXPORT_STREAM_CHUNK_SIZE
   value: "1000"
 - name: EVENT_STORE_CLUSTER_EVENTS_IGNORE_FIELDS
-  value: "hosts.*.connectivity,hosts.*.inventory,hosts.*.progress,hosts.*.checked_in_at,hosts.*.updated_at,updated_at"
+  value: "hosts.*.connectivity,hosts.*.inventory,hosts.*.progress,hosts.*.checked_in_at,hosts.*.updated_at,controller_logs_collected_at,controller_logs_started_at,updated_at"
