@@ -25,11 +25,11 @@ objects:
           imagePullPolicy: ${IMAGE_PULL_POLICY}
           resources:
             limits:
-              cpu: 500m
-              memory: 2000Mi
+              cpu: ${CPU_LIMIT}
+              memory: ${MEMORY_LIMIT}
             requests:
-              cpu: 300m
-              memory: 400Mi
+              cpu: ${CPU_REQUEST}
+              memory: ${MEMORY_REQUEST}
           envFrom:
             - secretRef:
                 name: events-scrape
@@ -255,3 +255,15 @@ parameters:
   value: "1000"
 - name: EVENT_STORE_CLUSTER_EVENTS_IGNORE_FIELDS
   value: "hosts.*.connectivity,hosts.*.inventory,hosts.*.progress,hosts.*.checked_in_at,hosts.*.updated_at,controller_logs_collected_at,controller_logs_started_at,updated_at"
+- name: MEMORY_LIMIT
+  value: "1000Mi"
+  required: false
+- name: CPU_LIMIT
+  value: "1"
+  required: false
+- name: MEMORY_REQUEST
+  value: "400Mi"
+  required: false
+- name: CPU_REQUEST
+  value: "250m"
+  required: false
