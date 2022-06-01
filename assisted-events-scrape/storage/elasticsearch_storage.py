@@ -1,7 +1,10 @@
 from typing import List, Callable, Iterable
 from clients import create_es_client_from_env
+from utils import log
 from opensearchpy import OpenSearch, helpers
-from opensearchpy.exceptions import NotFoundError
+from opensearchpy.exceptions import NotFoundError, ConnectionTimeout, TransportError
+from retry import retry
+from sentry_sdk import capture_exception
 
 DEFAULT_SCAN_SIZE = 500
 DEFAULT_SCROLL_WINDOW = '5m'
@@ -40,7 +43,15 @@ class ElasticsearchStorage:
             id_fn=id_fn,
             transform_document_fn=transform_document_fn,
             filter_by=filter_by)
-        return helpers.bulk(self._es_client, actions)
+        self._bulk(actions)
+
+    @retry((TransportError, ConnectionTimeout), delay=1, tries=3, backoff=2, max_delay=4, jitter=1)
+    def _bulk(self, actions):
+        try:
+            helpers.bulk(self._es_client, actions)
+        except helpers.BulkIndexError as e:
+            capture_exception(e)
+            log.exception()
 
     def _get_new_documents_actions(self, index: str, documents: List[dict],
                                    id_fn: Callable[[dict], str], transform_document_fn: Callable[[dict], dict],
@@ -70,7 +81,12 @@ class ElasticsearchStorage:
             "_source": [""]
         }
 
-        existing_docs = helpers.scan(self._es_client, index=index, query=query)
+        existing_docs = []
+        try:
+            existing_docs = self._scan(index=index, query=query)
+        except helpers.ScanError as e:
+            capture_exception(e)
+            log.exception()
 
         if transform_document_fn is None:
             transform_document_fn = identity
@@ -92,3 +108,7 @@ class ElasticsearchStorage:
                     "_source": transform_document_fn(d),
                     "_op_type": "index"
                 }
+
+    @retry((TransportError, ConnectionTimeout), delay=1, tries=3, backoff=2, max_delay=4, jitter=1)
+    def _scan(self, index, query):
+        return helpers.scan(self._es_client, index=index, query=query)
