@@ -6,6 +6,7 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 import dpath.util
 from dpath.exceptions import PathNotFound
+from retry import retry
 from utils import ErrorCounter, Changes, log, get_event_id, get_dict_hash
 from storage import ClusterEventsStorage, ElasticsearchStorage
 from events_scrape import InventoryClient
@@ -49,7 +50,7 @@ class ClusterEventsWorker:
             if "hosts" not in cluster or len(cluster["hosts"]) == 0:
                 cluster["hosts"] = self.__get_hosts(cluster["id"])
             events = self.__get_events(cluster["id"])
-            component_versions = self._ai_client.get_versions()
+            component_versions = self.__get_versions()
             self._store_normalized_events(component_versions, cluster, events)
             self.cluster_events_storage.store(component_versions, cluster, events)
             self._config.changes.set_changed()
@@ -57,6 +58,11 @@ class ClusterEventsWorker:
         except Exception as e:
             self.__handle_unexpected_error(e, f'Error while processing cluster {cluster["id"]}')
 
+    @retry(ApiException, delay=1, tries=3, backoff=2, max_delay=4, jitter=1)
+    def __get_versions(self):
+        return self._ai_client.get_versions()
+
+    @retry(ApiException, delay=1, tries=3, backoff=2, max_delay=4, jitter=1)
     def __get_events(self, cluster_id: str):
         events = []
         try:
@@ -67,6 +73,7 @@ class ClusterEventsWorker:
             log.debug(f'Events for cluster {cluster_id} not found')
         return events
 
+    @retry(ApiException, delay=1, tries=3, backoff=2, max_delay=4, jitter=1)
     def __get_hosts(self, cluster_id: str):
         hosts = []
         try:
