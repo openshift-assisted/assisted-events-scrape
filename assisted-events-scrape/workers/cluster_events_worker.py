@@ -60,30 +60,34 @@ class ClusterEventsWorker:
 
     @retry(ApiException, delay=1, tries=3, backoff=2, max_delay=4, jitter=1)
     def __get_versions(self):
-        return self._ai_client.get_versions()
+        return handle_4XX_apiexception(
+            self._ai_client.get_versions,
+            message_404="Versions not found. This should never happen",
+            default_return_value=[]
+        )
 
     @retry(ApiException, delay=1, tries=3, backoff=2, max_delay=4, jitter=1)
     def __get_events(self, cluster_id: str):
-        events = []
-        try:
-            events = self._ai_client.get_events(cluster_id, categories=EVENT_CATEGORIES)
-        except ApiException as e:
-            if e.status != 404:
-                raise e
-            log.debug(f'Events for cluster {cluster_id} not found')
-        return events
+        def _internal_get_events():
+            return self._ai_client.get_events(cluster_id, categories=EVENT_CATEGORIES)
+
+        return handle_4XX_apiexception(
+            _internal_get_events,
+            message_404=f"Events for cluster {cluster_id} not found",
+            default_return_value=[]
+        )
 
     @retry(ApiException, delay=1, tries=3, backoff=2, max_delay=4, jitter=1)
     def __get_hosts(self, cluster_id: str):
-        hosts = []
-        try:
-            hosts = self._ai_client.get_cluster_hosts(cluster_id=cluster_id)
-        except ApiException as e:
-            if e.status != 404:
-                raise e
-            # If a cluster is not found, then we consider to have 0 hosts. It was probably deleted
-            log.debug(f'Cluster {cluster_id} not found while retrieving hosts')
-        return hosts
+        # If a cluster is not found, then we consider to have 0 hosts. It was probably deleted
+        def _internal_get_hosts():
+            return self._ai_client.get_cluster_hosts(cluster_id=cluster_id)
+
+        return handle_4XX_apiexception(
+            _internal_get_hosts,
+            message_404=f"Cluster {cluster_id} not found while retrieving hosts",
+            default_return_value=[]
+        )
 
     def __handle_unexpected_error(self, e: Exception, msg: str):
         self._config.error_counter.inc()
@@ -156,3 +160,17 @@ def by_id(item: dict) -> str:
 def add_timestamp(doc: dict) -> dict:
     doc["timestamp"] = datetime.utcnow().isoformat()
     return doc
+
+
+def handle_4XX_apiexception(f, message_404="", default_return_value=None):
+    try:
+        return f()
+    except ApiException as e:
+        if e.status >= 500:
+            raise e
+        if e.status == 404:
+            log.debug(message_404)
+        else:
+            capture_exception(e)
+            log.exception()
+    return default_return_value
