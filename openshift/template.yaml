@@ -58,13 +58,13 @@ objects:
           - name: ES_USER
             valueFrom:
               secretKeyRef:
-                key: master_user_name
-                name: elastic-master-credentials
+                key: ${SCRAPER_ES_USER_SECRET_KEY}
+                name: ${SCRAPER_ES_USER_SECRET_NAME}
           - name: ES_PASS
             valueFrom:
               secretKeyRef:
-                key: master_user_password
-                name: elastic-master-credentials
+                key: ${SCRAPER_ES_PASSWORD_SECRET_KEY}
+                name: ${SCRAPER_ES_PASSWORD_SECRET_NAME}
 # Kibana manifests
 # Using service account as an Oauth client. read https://access.redhat.com/documentation/en-us/openshift_container_platform/4.2/html/authentication/using-service-accounts-as-oauth-client
 - apiVersion: v1
@@ -215,13 +215,13 @@ objects:
               - name: ES_USER
                 valueFrom:
                   secretKeyRef:
-                    key: master_user_name
-                    name: elastic-master-credentials
+                    key: ${SCRAPER_ES_USER_SECRET_KEY}
+                    name: ${SCRAPER_ES_USER_SECRET_NAME}
               - name: ES_PASS
                 valueFrom:
                   secretKeyRef:
-                    key: master_user_password
-                    name: elastic-master-credentials
+                    key: ${SCRAPER_ES_PASSWORD_SECRET_KEY}
+                    name: ${SCRAPER_ES_PASSWORD_SECRET_NAME}
             restartPolicy: OnFailure
 parameters:
 - name: IMAGE_NAME
@@ -267,3 +267,11 @@ parameters:
 - name: CPU_REQUEST
   value: "250m"
   required: false
+- name: SCRAPER_ES_USER_SECRET_NAME
+  value: elastic-master-credentials
+- name: SCRAPER_ES_USER_SECRET_KEY
+  value: master_user_name
+- name: SCRAPER_ES_PASSWORD_SECRET_NAME
+  value: elastic-master-credentials
+- name: SCRAPER_ES_PASSWORD_SECRET_KEY
+  value: master_user_password

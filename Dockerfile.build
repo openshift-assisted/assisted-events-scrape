@@ -19,6 +19,12 @@ RUN curl -sS -o oc-${OC_VERSION}.tar.gz https://mirror.openshift.com/pub/openshi
     install oc /usr/local/bin/oc &&\
     rm -f oc-${OC_VERSION}.tar.gz README.md kubectl oc
 
+ENV KUBECONFORM_VERSION=v0.4.13
+RUN curl -L -sS -o kubeconform-linux-amd64.tar.gz https://github.com/yannh/kubeconform/releases/download/${KUBECONFORM_VERSION}/kubeconform-linux-amd64.tar.gz &&\
+    tar xzf kubeconform-linux-amd64.tar.gz &&\
+    install kubeconform /usr/local/bin &&\
+    rm -f kubeconform kubeconform-linux-amd64.tar.gz
+
 COPY ./requirements.txt ./requirements-dev.txt ./
 
 RUN python3 -m pip install -r requirements.txt &&\

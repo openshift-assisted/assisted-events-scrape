@@ -23,7 +23,10 @@ install: build-wheel
 ##########
 
 validate-manifest:
-	oc process --local=true -f openshift/template.yaml --param IMAGE_TAG=foobar > /dev/null
+	oc process --local=true -f openshift/template.yaml --param IMAGE_TAG=foobar | kubeconform -strict -verbose -
+
+validate-dashboards:
+	kubeconform -strict -verbose dashboards/
 
 lint: flake8 pylint
 
