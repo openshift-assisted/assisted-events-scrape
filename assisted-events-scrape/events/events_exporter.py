@@ -22,7 +22,7 @@ class EventsExporter:
         today_str = date.today().strftime("%Y-%m-%d")
         epoch = int(time.time())
         offset = self._offset_repo.load(stream.name)
-        log.debug(f"Retrieved offset {offset}")
+        log.debug(f"Retrieved offset {offset} for stream {stream.name}")
         checksum = get_dict_hash(offset)
 
         try:
