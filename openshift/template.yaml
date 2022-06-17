@@ -172,7 +172,7 @@ objects:
   metadata:
     name: ccx-export
   spec:
-    schedule: "0 2 * * *"
+    schedule: "${CCX_EXPORT_CRON_TIME}"
     jobTemplate:
       spec:
         ttlSecondsAfterFinished: 600
@@ -279,3 +279,5 @@ parameters:
   value: elastic-master-credentials
 - name: SCRAPER_ES_PASSWORD_SECRET_KEY
   value: master_user_password
+- name: CCX_EXPORT_CRON_TIME
+  value: "0 2 * * *"
