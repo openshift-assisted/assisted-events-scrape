@@ -2,7 +2,8 @@ from typing import Iterable, List
 from dataclasses import dataclass
 from dateutil.parser import parse
 from opensearchpy import OpenSearch, helpers
-from opensearchpy.exceptions import NotFoundError
+from opensearchpy.exceptions import NotFoundError, TransportError, ConnectionTimeout
+from retry import retry
 
 
 @dataclass
@@ -17,6 +18,9 @@ class DateOffset:
         if items:
             for item in items:
                 self.setOffset(item.get("offset"), item.get("partition"))
+
+    def __repr__(self):
+        return str(self._offsets)
 
     def setOffset(self, offset: str, partition: str = None):
         """
@@ -53,11 +57,15 @@ class DateOffsetRepository:
         query = {"query": {"bool": {"must": [{"term": {"stream": stream}}]}}}
 
         try:
-            res = self._es_client.search(index=self._offset_index, body=query)
-            return DateOffset([item["_source"] for item in res["hits"]["hits"]])
+            res = self._scan(index=self._offset_index, query=query)
+            return DateOffset([item["_source"] for item in res])
         except NotFoundError:
             # Index not created yet, return empty offset
             return DateOffset()
+
+    @retry((TransportError, ConnectionTimeout), delay=1, tries=3, backoff=2, max_delay=4, jitter=1)
+    def _scan(self, index, query):
+        return helpers.scan(self._es_client, index=index, query=query)
 
     def _get_actions_from_offsets(self, stream: str, offsets: DateOffset) -> Iterable[dict]:
         for partition, offset in offsets.getAll().items():
