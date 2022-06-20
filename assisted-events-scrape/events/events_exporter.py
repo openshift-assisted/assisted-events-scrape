@@ -10,6 +10,9 @@ from opensearchpy.exceptions import NotFoundError
 from opensearchpy import OpenSearch, helpers
 
 
+DEFAULT_TIMEOUT = 30.0
+
+
 class EventsExporter:
     def __init__(self, config: EventExportConfig, es_client: OpenSearch,
                  object_writer: ObjectStorageWriter, offset_repo: DateOffsetRepository):
@@ -44,12 +47,14 @@ class EventsExporter:
             for partition, offset in offsets.getAll().items():
                 query = _get_query(stream, partition, offset)
                 log.debug(f"Retrieving documents for {stream.name}, query: {query}")
-                docs = helpers.scan(self._es_client, index=stream.name, size=self._config.chunk_size, query=query)
+                docs = helpers.scan(self._es_client, index=stream.name, size=self._config.chunk_size,
+                                    query=query, request_timeout=DEFAULT_TIMEOUT)
                 all_docs = chain(all_docs, docs)
             partitions = list(offsets.getAll().keys())
         query = _get_query_exclude_partitions(stream.options.partition_key, partitions)
         log.debug(f"Retrieving documents for {stream.name}, query: {query}")
-        docs = helpers.scan(self._es_client, index=stream.name, size=self._config.chunk_size, query=query)
+        docs = helpers.scan(self._es_client, index=stream.name, size=self._config.chunk_size,
+                            query=query, request_timeout=DEFAULT_TIMEOUT)
         return chain(all_docs, docs)
 
 
