@@ -43,49 +43,65 @@ class EventsExporter:
 
     def _get_all_docs(self, stream: EventStream, offsets: DateOffset) -> Iterable[dict]:
         all_docs = []
+        partitions = []
         if offsets:
             for partition, offset in offsets.getAll().items():
-                query = _get_query(stream, partition, offset)
-                log.debug(f"Retrieving documents for {stream.name}, query: {query}")
+                query = self._get_query(stream, partition, offset)
+                log.debug(f"Retrieving documents for {stream.name} (partition: {partition}, offset: {offset})")
                 docs = helpers.scan(self._es_client, index=stream.name, size=self._config.chunk_size,
                                     query=query, request_timeout=DEFAULT_TIMEOUT)
                 all_docs = chain(all_docs, docs)
             partitions = list(offsets.getAll().keys())
-        query = _get_query_exclude_partitions(stream.options.partition_key, partitions)
-        log.debug(f"Retrieving documents for {stream.name}, query: {query}")
-        docs = helpers.scan(self._es_client, index=stream.name, size=self._config.chunk_size,
-                            query=query, request_timeout=DEFAULT_TIMEOUT)
-        return chain(all_docs, docs)
+        # if partitions have been used, retrieve all other partitions that have no offset stored
+        if stream.options.partition_key:
+            query = self._get_query_exclude_partitions(stream.options.partition_key, partitions)
+            log.debug(f"Retrieving documents for {stream.name}, query: {query}")
+            docs = helpers.scan(self._es_client, index=stream.name, size=self._config.chunk_size,
+                                query=query, request_timeout=DEFAULT_TIMEOUT)
+            all_docs = chain(all_docs, docs)
+        return all_docs
 
+    # pylint: disable=no-self-use
+    def _get_query(self, stream: EventStream, partition: str, offset: str) -> dict:
+        offset_range = {"range": {stream.options.order_key: {"gt": offset}}}
+        must = [offset_range]
 
-def _get_query(stream: EventStream, partition: str, offset: str) -> dict:
-    offset_range = {"range": {stream.options.order_key: {"gt": offset}}}
-    must = [offset_range]
+        if stream.options.partition_key:
+            partition_filter = {"term": {stream.options.partition_key: partition}}
+            must.append(partition_filter)
 
-    if stream.options.partition_key:
-        partition_filter = {"term": {stream.options.partition_key: partition}}
-        must.append(partition_filter)
-
-    return {
-        "query": {
-            "bool": {
-                "must": must
+        return {
+            "query": {
+                "bool": {
+                    "must": must
+                }
             }
         }
-    }
 
-
-def _get_query_exclude_partitions(partition_key: str, partitions: List[str]) -> dict:
-    return {
-        "query": {
-            "bool": {
-                "must_not": [
-                    {
-                        "terms": {
-                            partition_key: partitions
-                        }
+    def _get_query_exclude_partitions(self, partition_key: str, partitions: List[str]) -> dict:
+        if not partition_key:
+            return {
+                "query": {
+                    "bool": {
+                        "must_not": [
+                            {
+                                "match_all": {}
+                            }
+                        ]
                     }
-                ]
+                }
+            }
+        return {
+            "query": {
+                "bool": {
+                    "must_not": [
+                        {
+                            "terms": {
+                                partition_key: partitions
+                            }
+                        }
+                    ]
+                }
             }
         }
-    }
+    # pylint: enable=no-self-use
