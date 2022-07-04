@@ -138,7 +138,6 @@ objects:
           - --https-address=
           - --pass-basic-auth=false
           - --openshift-sar={"namespace":"$(NAMESPACE)","resource":"services","name":"kibana-proxy","verb":"get"}
-          - --htpasswd-file=/etc/oauth-proxy/htpasswd
           env:
           - name: NAMESPACE
             valueFrom:
@@ -154,19 +153,6 @@ objects:
               secretKeyRef:
                 key: session_secret
                 name: kibana-oauth-application
-          volumeMounts:
-          - mountPath: /etc/oauth-proxy/
-            name: oauth-proxy-htpasswd
-            readOnly: true
-        volumes:
-        - name: oauth-proxy-htpasswd
-          secret:
-            defaultMode: 420
-            optional: false
-            secretName: kibana-oauth-application
-            items:
-            - key: htpasswd
-              path: htpasswd
 - apiVersion: batch/v1
   kind: CronJob
   metadata:
