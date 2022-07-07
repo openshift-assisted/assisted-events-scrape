@@ -37,10 +37,15 @@ class ClusterEventsWorker:
         self._executor = None
         self._es_store = es_store
 
-    def process_clusters(self, clusters: List[dict]) -> None:
+    def process_clusters(self, clusters: List[dict], infraenvs: List[dict]) -> None:
+        infraenvs = {item["cluster_id"] : item for item in infraenvs}
         with ThreadPoolExecutor(max_workers=self._config.max_workers) as self._executor:
             cluster_count = len(clusters)
             for cluster in clusters:
+                cluster_id = cluster["id"]
+                cluster["infra_env"] = {}
+                if cluster_id in infraenvs:
+                    cluster["infra_env"] = infraenvs[cluster_id]
                 self._executor.submit(self.store_events_for_cluster, cluster)
             log.info(f"Sent {cluster_count} clusters for processing...")
 
@@ -121,6 +126,15 @@ class ClusterEventsWorker:
                     "cluster_id": cluster["id"]
                 }
             }
+            infra_env = cluster.get("infra_env")
+            if infra_env:
+                del cluster["infra_env"]
+                self._es_store.store_changes(
+                    index=EventStoreConfig.INFRA_ENVS_EVENTS_INDEX,
+                    documents=[infra_env],
+                    id_fn=get_dict_hash,
+                    filter_by=cluster_id_filter)
+
             self._es_store.store_changes(
                 index=EventStoreConfig.COMPONENT_VERSIONS_EVENTS_INDEX,
                 documents=[component_versions],
@@ -137,6 +151,12 @@ class ClusterEventsWorker:
                 documents=event_list,
                 id_fn=get_event_id,
                 filter_by=cluster_id_filter)
+            self._es_store.store_changes(
+                index=EventStoreConfig.COMPONENT_VERSIONS_EVENTS_INDEX,
+                documents=[component_versions],
+                id_fn=get_version_hash,
+                transform_document_fn=add_timestamp
+            )
         except Exception as e:
             self.__handle_unexpected_error(e, f'Error while storing normalized events for cluster {cluster["id"]}')
 
@@ -158,8 +178,17 @@ def by_id(item: dict) -> str:
 
 
 def add_timestamp(doc: dict) -> dict:
-    doc["timestamp"] = datetime.utcnow().isoformat()
-    return doc
+    d = deepcopy(doc)
+    # Python can produce timezone information with isoformat()
+    # however it would be in the +00:00 form, whereas assisted-service
+    # produces it with `Z` notation. To be consistent, we get UTC time
+    # without tz info, and append 'Z' in the end
+    d["timestamp"] = datetime.utcnow().isoformat() + "Z"
+    return d
+
+
+def get_version_hash(d: dict) -> str:
+    return get_dict_hash(d, ["timestamp"])
 
 
 def handle_4XX_apiexception(f, message_404="", default_return_value=None):

@@ -1,0 +1,24 @@
+{
+  "cluster_id": "d386f7df-03ba-46bf-a49b-f6b65a0fb90d",
+  "cpu_architecture": "x86_64",
+  "created_at": "2022-06-20T09:16:19.223191Z",
+  "download_url": "https://api.openshift.com/api/assisted-images/images/3cef974f-f6fa-4800-bbc8-91519bfe17fe?arch=x86_64&image_token=mytoken&type=full-iso&version=4.10",
+  "email_domain": "qq.com",
+  "expires_at": "2022-06-21T12:27:07.000Z",
+  "href": "/api/assisted-install/v2/infra-envs/3cef974f-f6fa-4800-bbc8-91519bfe17fe",
+  "id": "3cef974f-f6fa-4800-bbc8-91519bfe17fe",
+  "kind": "InfraEnv",
+  "name": "test-openshift_infra-env",
+  "openshift_version": "4.10",
+  "org_id": "xxxxxxxx",
+  "proxy": {
+    "http_proxy": "",
+    "https_proxy": "",
+    "no_proxy": ""
+  },
+  "pull_secret_set": true,
+  "ssh_authorized_key": "ssh-rsa CCCCB3NzaC1yc2EAAAADAQABAAABgQDCIo4G0wrkcNyb2OBrH7BhuITpMsE43BYL6O6z04woXT8Z+VbVFbsf9IKBOuH2fS3pfibSxzkMYifzXqz3iPGqjeRo72GTodgrchL3fN7/o1bQ/h2gx9rAII8qwqcHszM21AZlNTZSMbitAN82TYB9dYaLMz5IUuXQHJqO9unXK/j78LsMe1SYBgK9uyEGy3lAzmwZKly3e7NBFagK+gu9+/gAipgp05UrZZ3pUMud9tSTZIYI84yrmpJ6TOXkbIvdi+WFcx7tuiI2uKRGdXW1wywETVzIKqQC99hQeRbr4PYJ2relyUSwGfdhkf2CWD8SWUbZ0LCgaI+zPTbODIh8aeWezE8XZyEMJLxXSXy8bqeVLr61FTZH0+xsszTSGe0Aa4mPAJtYJjAZfLsCaHDFSIGoPNgKtWcb8SLqWSWHY46b9FPisPXLMMmavs6SMbxqc23sPTvvitnPzkHwY350Hkhms0PGCpVZZZICdnw10u2iH8F1l98VZZIojO6ncPU=",
+  "type": "full-iso",
+  "updated_at": "2022-06-21T08:27:07.246777Z",
+  "user_name": "example@example.com"
+}
