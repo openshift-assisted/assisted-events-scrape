@@ -58,11 +58,12 @@ class TestIntegration:
         )
         client = session.client('s3', endpoint_url=f"{endpoint_url}")
         objects = client.list_objects(Bucket='mybucket')
-        # it shoul have one each event type
-        assert len(objects['Contents']) == 3
+        # it should have one each event type
+        assert len(objects['Contents']) == 4
         assert at_least_one_matches_key(objects['Contents'], "Key", ".*events.*")
         assert at_least_one_matches_key(objects['Contents'], "Key", ".*clusters.*")
         assert at_least_one_matches_key(objects['Contents'], "Key", ".*component_versions.*")
+        assert at_least_one_matches_key(objects['Contents'], "Key", ".*infra_envs.*")
 
         # Clean up
         for obj in objects['Contents']:

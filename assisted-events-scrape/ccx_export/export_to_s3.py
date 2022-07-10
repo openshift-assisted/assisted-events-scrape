@@ -21,6 +21,13 @@ def export_events():
             )
         ),
         EventStream(
+            EventStoreConfig.INFRA_ENVS_EVENTS_INDEX,
+            DateOffsetOptions(
+                "id",
+                "created_at"
+            )
+        ),
+        EventStream(
             EventStoreConfig.COMPONENT_VERSIONS_EVENTS_INDEX,
             DateOffsetOptions(
                 None,

@@ -5,6 +5,7 @@ from utils import get_env
 DEFAULT_EVENTS_IDX = ".events"
 DEFAULT_CLUSTER_EVENTS_IDX = ".clusters"
 DEFAULT_COMPONENT_VERSIONS_EVENTS_IDX = ".component_versions"
+DEFAULT_INFRA_ENVS_EVENTS_IDX = ".infra_envs"
 
 
 @dataclass
@@ -12,10 +13,12 @@ class EventStoreConfig:
     EVENTS_INDEX = ".events"
     CLUSTER_EVENTS_INDEX = ".clusters"
     COMPONENT_VERSIONS_EVENTS_INDEX = ".component_versions"
+    INFRA_ENVS_EVENTS_INDEX = ".infra_envs"
 
     events_index: str
     cluster_events_index: str
     component_versions_events_index: str
+    infra_envs_events_index: str
     cluster_events_ignore_fields: List[str]
 
     @classmethod
@@ -29,5 +32,6 @@ class EventStoreConfig:
             get_env("EVENT_STORE_EVENTS_IDX", default=DEFAULT_EVENTS_IDX),
             get_env("EVENT_STORE_CLUSTER_EVENTS_IDX", default=DEFAULT_CLUSTER_EVENTS_IDX),
             get_env("EVENT_STORE_COMPONENT_VERSIONS_EVENTS_IDX", default=DEFAULT_COMPONENT_VERSIONS_EVENTS_IDX),
+            get_env("EVENT_STORE_INFRA_ENVS_EVENTS_IDX", default=DEFAULT_INFRA_ENVS_EVENTS_IDX),
             cluster_events_ignore_fields
         )

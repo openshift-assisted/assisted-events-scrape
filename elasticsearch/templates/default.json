@@ -4,6 +4,7 @@
     ".events",
     ".clusters",
     ".component_versions",
+    ".infra_envs",
     "test*"
   ],
   "settings" : {

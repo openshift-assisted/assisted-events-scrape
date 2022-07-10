@@ -26,15 +26,22 @@ def get_rule(path: str, body: str, queryStringParameters=None) -> dict:
     return rule
 
 
+def get_items(glob_pattern: str):
+    items = []
+    for filename in fixtures_path.glob(glob_pattern):
+        with open(filename, "r") as f:
+            item = json.load(f)
+            items.append(item)
+    return items
+
+
 fixtures_path = Path(__file__).parent.joinpath('../assisted-events-scrape/tests/integration/fixtures/')
 
-clusters = []
-for cluster_filename in fixtures_path.glob('clusters-*'):
-    with open(cluster_filename, "r") as cluster_file:
-        cluster = json.load(cluster_file)
-    clusters.append(cluster)
+clusters = get_items('clusters-*')
+infra_envs = get_items('infra_env-*')
 
 clusters_txt = json.dumps(clusters)
+infra_envs_txt = json.dumps(infra_envs)
 rules = []
 rules.append(get_rule(
     path="/api/assisted-install/v2/component-versions",
@@ -43,6 +50,10 @@ rules.append(get_rule(
 rules.append(get_rule(
     path="/api/assisted-install/v2/clusters",
     body=clusters_txt
+))
+rules.append(get_rule(
+    path="/api/assisted-install/v2/infra-envs",
+    body=infra_envs_txt
 ))
 
 for cluster in clusters:

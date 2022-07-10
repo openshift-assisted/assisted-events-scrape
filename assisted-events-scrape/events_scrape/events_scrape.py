@@ -52,11 +52,12 @@ class ScrapeEvents:
 
     def run_service(self):
         clusters = self._client.clusters_list()
+        infraenvs = self._client.infra_envs_list()
 
         if not clusters:
             log.warning("No clusters were found.")
             return None
-        self._worker.process_clusters(clusters)
+        self._worker.process_clusters(clusters, infraenvs)
         log.info("Finish syncing all clusters")
 
     def shutdown(self, sig, _):

@@ -22,7 +22,7 @@ if [[ "${platform}" == "ocp" ]]; then
     ${cli} process --local=true -f assisted-events-scrape/tests/integration/ci-manifests/ --output=yaml --param ELASTICSEARCH_ROUTE_HOST=$(./tools/get_ocp_route_host.sh elasticsearch-assisted) MINIO_ROUTE_HOST=$(./tools/get_ocp_route_host.sh minio-assisted) | ${cli} apply ${ns} -f -
 fi
 
-${cli} wait ${ns} --timeout=120s --for=condition=Available deployment --all
+${cli} wait ${ns} --timeout=300s --for=condition=Available deployment --all
 ${cli} wait ${ns} --timeout=300s --for=condition=Ready pods -l app=elasticsearch-master
 ${cli} wait ${ns} --timeout=300s --for=condition=Ready pods -l app=mockserver
 ${cli} wait ${ns} --timeout=300s --for=condition=Ready pods -l app=minio
