@@ -126,9 +126,10 @@ class ClusterEventsWorker:
                     "cluster_id": cluster["id"]
                 }
             }
-            infra_env = cluster.get("infra_env")
+            cluster_copy = deepcopy(cluster)
+            infra_env = cluster_copy.get("infra_env")
             if infra_env:
-                del cluster["infra_env"]
+                del cluster_copy["infra_env"]
                 self._es_store.store_changes(
                     index=EventStoreConfig.INFRA_ENVS_EVENTS_INDEX,
                     documents=[infra_env],
@@ -143,7 +144,7 @@ class ClusterEventsWorker:
             )
             self._es_store.store_changes(
                 index=EventStoreConfig.CLUSTER_EVENTS_INDEX,
-                documents=[cluster],
+                documents=[cluster_copy],
                 id_fn=self._cluster_checksum,
                 filter_by=cluster_id_filter)
             self._es_store.store_changes(
