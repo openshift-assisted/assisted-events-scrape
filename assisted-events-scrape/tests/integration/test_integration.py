@@ -49,6 +49,21 @@ class TestIntegration:
             except TimeoutExpired:
                 # Wait function expired, it means doc count could not match in the given time
                 assert False
+        query = {
+            "size": 1,
+            "query": {
+                "term": {
+                    "cluster.id": {
+                        "value": "d386f7df-03ba-46bf-a49b-f6b65a0fb90d"
+                    }
+                }
+            }
+        }
+        response = self._es_client.search(index=self._config.index, body=query)
+        doc = response["hits"]["hits"][0]["_source"]
+        assert "infra_env" in doc["cluster"]
+        assert doc["cluster"]["infra_env"]["org_id"] == "xxxxxxxx"
+        assert doc["cluster"]["infra_env"]["type"] == "full-iso"
 
     def test_s3_upload(self):
         endpoint_url = os.getenv("AWS_S3_ENDPOINT")
