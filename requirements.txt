@@ -12,3 +12,4 @@ wheel
 smart-open[s3]~=5.2.1
 boto3~=1.22.6
 dpath~=2.0.6
+fnv~=0.2.0

@@ -45,6 +45,13 @@
             "type" : "keyword"
           }
         }
+      },
+      "cluster": {
+        "properties": {
+          "user_id": {
+            "type": "keyword"
+          }
+        }
       }
     }
   },

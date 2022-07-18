@@ -65,6 +65,9 @@ class TestIntegration:
         assert doc["cluster"]["infra_env"]["org_id"] == "xxxxxxxx"
         assert doc["cluster"]["infra_env"]["type"] == "full-iso"
 
+        assert "user_name" not in doc["cluster"]
+        assert "user_id" in doc["cluster"]
+
     def test_s3_upload(self):
         endpoint_url = os.getenv("AWS_S3_ENDPOINT")
         session = boto3.Session(
