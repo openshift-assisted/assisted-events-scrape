@@ -7,7 +7,7 @@ from datetime import datetime
 import dpath.util
 from dpath.exceptions import PathNotFound
 from retry import retry
-from utils import ErrorCounter, Changes, log, get_event_id, get_dict_hash
+from utils import ErrorCounter, Changes, log, get_event_id, get_dict_hash, Anonymizer
 from storage import ClusterEventsStorage, ElasticsearchStorage
 from events_scrape import InventoryClient
 from sentry_sdk import capture_exception
@@ -51,6 +51,7 @@ class ClusterEventsWorker:
 
     def store_events_for_cluster(self, cluster: dict) -> None:
         try:
+            Anonymizer.anonymize_cluster(cluster)
             log.debug(f"Storing cluster: {cluster}")
             if "hosts" not in cluster or len(cluster["hosts"]) == 0:
                 cluster["hosts"] = self.__get_hosts(cluster["id"])
