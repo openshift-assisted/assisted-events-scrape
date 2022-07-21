@@ -6,7 +6,6 @@ from clients import create_es_client_from_env
 from config import ScraperConfig
 from events_scrape import InventoryClient
 import opensearchpy
-import fnv
 
 from . import process
 
@@ -38,7 +37,6 @@ class ClusterEventsStorage:
 
         metadata_json = get_metadata_json(cluster, component_versions)
 
-        self._hash_user_name(metadata_json["cluster"])
         cluster_bash_data = process_metadata(metadata_json)
         event_names = get_cluster_object_names(cluster_bash_data)
 
@@ -49,21 +47,6 @@ class ClusterEventsStorage:
             log.info(f"Cluster {cluster_id} logged events are not same as the event count, logging all clusters events")
             events = self.process_events(cluster_bash_data, event_list, event_names)
             self.store_events(events, only_new_events=False)
-
-    @classmethod
-    def _hash_user_name(cls, cluster: dict):
-        """mask user name with unique generated FNV-1a 128 bit id"""
-        if "user_name" not in cluster:
-            return
-
-        user_name = cluster.get("user_name")
-        del cluster["user_name"]
-
-        # empty username
-        if not user_name:
-            cluster["user_id"] = None
-        else:
-            cluster["user_id"] = str(fnv.hash(str(user_name).encode(), algorithm=fnv.fnv_1a, bits=128))
 
     def process_events(self, cluster_bash_data, event_list, event_names):
         for event in event_list[::-1]:
