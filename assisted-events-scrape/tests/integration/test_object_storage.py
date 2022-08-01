@@ -16,7 +16,11 @@ class TestObjectStorage:
 
     def test_write_stream(self):
         random_items = self._random_items()
-        self._writer.write_ndjson_stream("foobar/barfoo.ndjson", random_items, )
+
+        def get_key(item):
+            return "foobar/barfoo.ndjson"
+
+        self._writer.write_ndjson_stream(get_key, random_items)
         resp = self._s3_client.get_object(Bucket='mybucket', Key="foobar/barfoo.ndjson")
 
         assert resp['ResponseMetadata']['HTTPStatusCode'] == 200

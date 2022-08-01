@@ -14,6 +14,7 @@ class EventStoreConfig:
     CLUSTER_EVENTS_INDEX = ".clusters"
     COMPONENT_VERSIONS_EVENTS_INDEX = ".component_versions"
     INFRA_ENVS_EVENTS_INDEX = ".infra_envs"
+    CLUSTER_EVENTS_IGNORE_FIELDS_INTERNAL = ["cluster_state_id"]
 
     events_index: str
     cluster_events_index: str
@@ -23,10 +24,10 @@ class EventStoreConfig:
 
     @classmethod
     def create_from_env(cls) -> 'EventStoreConfig':
-        cluster_events_ignore_fields = []
+        cluster_events_ignore_fields = cls.CLUSTER_EVENTS_IGNORE_FIELDS_INTERNAL
         cluster_events_ignore_fields_str = get_env("EVENT_STORE_CLUSTER_EVENTS_IGNORE_FIELDS", default="")
         if len(cluster_events_ignore_fields_str) > 0:
-            cluster_events_ignore_fields = cluster_events_ignore_fields_str.split(",")
+            cluster_events_ignore_fields += cluster_events_ignore_fields_str.split(",")
 
         return cls(
             get_env("EVENT_STORE_EVENTS_IDX", default=DEFAULT_EVENTS_IDX),

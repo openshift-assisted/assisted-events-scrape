@@ -17,14 +17,14 @@ def export_events():
             EventStoreConfig.CLUSTER_EVENTS_INDEX,
             DateOffsetOptions(
                 "id",
-                "created_at"
+                "updated_at"
             )
         ),
         EventStream(
             EventStoreConfig.INFRA_ENVS_EVENTS_INDEX,
             DateOffsetOptions(
                 "id",
-                "created_at"
+                "updated_at"
             )
         ),
         EventStream(

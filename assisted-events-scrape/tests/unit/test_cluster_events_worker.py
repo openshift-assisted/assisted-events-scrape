@@ -127,7 +127,11 @@ class TestClusterEventsWorker:
 
     def test_storing_events_cluster_with_hosts(self):
 
-        cluster = {"id": "abcd", "name": "mycluster", "hosts": ["1", "2", "3"], "infra_env": {"foo": "bar"}}
+        cluster = {
+            "id": "abcd", "name": "mycluster",
+            "hosts": [{"myid": "1"}, {"myid": "2"}, {"myid": "3"}],
+            "infra_env": {"foo": "bar"}
+        }
 
         self.worker.store_events_for_cluster(cluster)
 
@@ -142,7 +146,11 @@ class TestClusterEventsWorker:
 
     def test_storing_events_cluster_with_empty_infraenv(self):
 
-        cluster = {"id": "abcd", "name": "mycluster", "hosts": ["1", "2", "3"], "infra_env": {}}
+        cluster = {
+            "id": "abcd", "name": "mycluster",
+            "hosts": [{"id": "1"}, {"id": "2"}, {"id": "3"}, {"notid": "4"}],
+            "infra_env": {}
+        }
 
         self.worker.store_events_for_cluster(cluster)
 
@@ -156,7 +164,10 @@ class TestClusterEventsWorker:
         assert self.changes.has_changed_in_last_minutes(1)
 
     def test_storing_events_cluster_with_no_infraenv(self):
-        cluster = {"id": "abcd", "name": "mycluster", "hosts": ["1", "2", "3"]}
+        cluster = {
+            "id": "abcd", "name": "mycluster",
+            "hosts": [{"id": "1"}, {"id": "2"}, {"id": "3"}]
+        }
 
         self.worker.store_events_for_cluster(cluster)
 
@@ -170,7 +181,11 @@ class TestClusterEventsWorker:
         assert self.changes.has_changed_in_last_minutes(1)
 
     def test_storing_events_cluster_with_empty_hosts(self):
-        cluster = {"id": "abcd", "name": "mycluster", "hosts": [], "infra_env": {"foo": "bar"}}
+        cluster = {
+            "id": "abcd", "name": "mycluster",
+            "hosts": [],
+            "infra_env": {"foo": "bar"}
+        }
 
         self.worker.store_events_for_cluster(cluster)
 
@@ -221,17 +236,18 @@ class TestClusterEventsWorker:
 
     def _expect_store_normalized_events(self, no_infraenv=False):
         expected_calls = []
+
         if not no_infraenv:
-            expected_calls = [call(index=self.config.events.infra_envs_events_index, filter_by=ANY,
-                                   documents=ANY, id_fn=get_dict_hash)]
+            expected_calls += [call(index=self.config.events.infra_envs_events_index, filter_by=ANY,
+                                    documents=ANY, id_fn=get_dict_hash)]
 
         expected_calls += [
-            call(index=self.config.events.component_versions_events_index,
-                 documents=ANY, id_fn=ANY, transform_document_fn=ANY),
             call(index=self.config.events.cluster_events_index, filter_by=ANY,
                  documents=ANY, id_fn=ANY),
             call(index=self.config.events.events_index, documents=ANY, filter_by=ANY,
                  id_fn=get_event_id),
+            call(index=self.config.events.component_versions_events_index,
+                 documents=ANY, id_fn=ANY, transform_document_fn=ANY),
         ]
         self.es_store.store_changes.assert_has_calls(expected_calls)
 

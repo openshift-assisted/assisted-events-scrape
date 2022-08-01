@@ -48,6 +48,7 @@ ci-integration-test:
 deploy-kind: build-image
 	kind get clusters | grep assisted-events-scrape || kind create cluster --name assisted-events-scrape
 	kind --name assisted-events-scrape export kubeconfig
+	./tools/kind_pull_and_push.sh
 	kubectl apply -f .kind/daemonset.yaml
 	kind load docker-image --name assisted-events-scrape $(ASSISTED_EVENTS_SCRAPE_IMAGE)
 	./tools/deploy_manifests.sh kind $(ASSISTED_EVENTS_SCRAPE_IMAGE) $(TEST_NAMESPACE)
@@ -61,3 +62,7 @@ cleanup-integration-test:
 kind-reload-image: build-image
 	kind load docker-image --name assisted-events-scrape $(ASSISTED_EVENTS_SCRAPE_IMAGE)
 	kubectl delete pod -l app=assisted-events-scrape
+
+rerun-export-job: kind-reload-image
+	kubectl delete job test-s3
+	oc create job test-s3 --from=cronjob/ccx-export

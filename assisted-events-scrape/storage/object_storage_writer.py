@@ -1,4 +1,4 @@
-from typing import Iterable
+from typing import Iterable, Callable
 import json
 import boto3
 import smart_open
@@ -30,7 +30,8 @@ class ObjectStorageWriter:
         self.config = config
         self.client = client
 
-    def write_ndjson_stream(self, key: str, documents: Iterable[dict], options: DateOffsetOptions = None) -> DateOffset:
+    def write_ndjson_stream(self, key_fn: Callable[[dict], str], documents: Iterable[dict],
+                            options: DateOffsetOptions = None) -> DateOffset:
 
         """
         Stream documents to bucket/key.
@@ -42,23 +43,31 @@ class ObjectStorageWriter:
         if options:
             offset = DateOffset()
 
-        with smart_open.open(
-                f"s3://{self.config.bucket}/{key}",
-                "w",
-                transport_params=dict(client=self.client)) as bucket:
+        streams = {}
+        for document in documents:
+            key = key_fn(document)
+            stream = streams.get(key)
+            if not stream:
+                streams[key] = smart_open.open(
+                    f"s3://{self.config.bucket}/{key}",
+                    "w",
+                    transport_params=dict(client=self.client)
+                )
 
-            for document in documents:
-                if options:
-                    doc_offset = None
-                    partition = None
-                    if options.order_key:
-                        doc_offset = self._get_offset_from_doc(document, options.order_key)
-                    if options.partition_key:
-                        partition = self._get_partition_from_doc(document, options.partition_key)
-                    offset.setOffset(doc_offset, partition)
-                log.debug(f"Writing document: {document}")
-                document_str = json.dumps(document)
-                bucket.write(document_str + "\n")
+            if options:
+                doc_offset = None
+                partition = None
+                if options.order_key:
+                    doc_offset = self._get_offset_from_doc(document, options.order_key)
+                if options.partition_key:
+                    partition = self._get_partition_from_doc(document, options.partition_key)
+                offset.setOffset(doc_offset, partition)
+            log.debug(f"Writing document: {document}")
+            document_str = json.dumps(document)
+            streams[key].write(document_str + "\n")
+
+        for stream in streams.values():
+            stream.close()
         return offset
 
     # pylint: disable=no-self-use

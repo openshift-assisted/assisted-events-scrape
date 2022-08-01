@@ -45,7 +45,7 @@ else
     ./tools/ocp2k8s.sh ${image} | ${cli} apply ${ns} -f -
 fi
 
-${cli} wait ${ns} --timeout=30s --for=condition=Available deployment --all
+${cli} wait ${ns} --timeout=300s --for=condition=Available deployment --all
 ${cli} wait ${ns} --timeout=30s --for=condition=Ready pods -l app=assisted-events-scrape
 
 ${cli} ${ns} create job test-s3 --from=cronjob/ccx-export

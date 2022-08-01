@@ -4,6 +4,7 @@ from copy import deepcopy
 import queue
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
+from uuid import UUID, uuid5
 import dpath.util
 from dpath.exceptions import PathNotFound
 from retry import retry
@@ -15,6 +16,8 @@ from config import SentryConfig, EventStoreConfig
 from assisted_service_client.rest import ApiException
 
 EVENT_CATEGORIES = ["user", "metrics"]
+# Namespace needed for creation of UUID5
+CLUSTER_STATE_ID_NAMESPACE = UUID('f2f6efbc-613f-4747-8873-27fc1a39231e')
 
 
 @dataclass
@@ -52,6 +55,7 @@ class ClusterEventsWorker:
     def store_events_for_cluster(self, cluster: dict) -> None:
         try:
             Anonymizer.anonymize_cluster(cluster)
+            self._enrich_cluster(cluster)
             log.debug(f"Storing cluster: {cluster}")
             if "hosts" not in cluster or len(cluster["hosts"]) == 0:
                 cluster["hosts"] = self.__get_hosts(cluster["id"])
@@ -135,24 +139,21 @@ class ClusterEventsWorker:
                     index=EventStoreConfig.INFRA_ENVS_EVENTS_INDEX,
                     documents=[infra_env],
                     id_fn=get_dict_hash,
-                    filter_by=cluster_id_filter)
+                    filter_by=cluster_id_filter
+                )
 
-            self._es_store.store_changes(
-                index=EventStoreConfig.COMPONENT_VERSIONS_EVENTS_INDEX,
-                documents=[component_versions],
-                id_fn=get_dict_hash,
-                transform_document_fn=add_timestamp
-            )
             self._es_store.store_changes(
                 index=EventStoreConfig.CLUSTER_EVENTS_INDEX,
                 documents=[cluster_copy],
                 id_fn=self._cluster_checksum,
-                filter_by=cluster_id_filter)
+                filter_by=cluster_id_filter
+            )
             self._es_store.store_changes(
                 index=EventStoreConfig.EVENTS_INDEX,
                 documents=event_list,
                 id_fn=get_event_id,
-                filter_by=cluster_id_filter)
+                filter_by=cluster_id_filter
+            )
             self._es_store.store_changes(
                 index=EventStoreConfig.COMPONENT_VERSIONS_EVENTS_INDEX,
                 documents=[component_versions],
@@ -164,6 +165,7 @@ class ClusterEventsWorker:
 
     def _cluster_checksum(self, doc: dict) -> dict:
         doc_copy = deepcopy(doc)
+        log.debug(f"Ignoring fields: <{self._config.events.cluster_events_ignore_fields}>")
         for field in self._config.events.cluster_events_ignore_fields:
             try:
                 dpath.util.delete(doc_copy, field, separator=".")
@@ -174,9 +176,13 @@ class ClusterEventsWorker:
             doc_copy["hosts"].sort(key=by_id)
         return get_dict_hash(doc_copy)
 
+    def _enrich_cluster(self, doc: dict):
+        doc["cluster_state_id"] = str(uuid5(CLUSTER_STATE_ID_NAMESPACE, self._cluster_checksum(doc)))
+
 
 def by_id(item: dict) -> str:
-    return item.get("id", None)
+    # ID should always be there, if not consider it empty string
+    return item.get("id", "")
 
 
 def add_timestamp(doc: dict) -> dict:

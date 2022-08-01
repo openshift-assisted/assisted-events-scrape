@@ -22,6 +22,9 @@ class DateOffset:
     def __repr__(self):
         return str(self._offsets)
 
+    def size(self):
+        return len(self._offsets)
+
     def setOffset(self, offset: str, partition: str = None):
         """
         When partition is none, it means there is no partition.
