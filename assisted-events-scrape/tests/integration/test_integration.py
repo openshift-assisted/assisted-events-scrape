@@ -7,6 +7,7 @@ import re
 import json
 import random
 from typing import List
+from uuid import UUID
 from config import EventStoreConfig
 from waiting import TimeoutExpired
 from utils import log
@@ -84,15 +85,18 @@ class TestIntegration:
 
         assert "user_name" not in doc["cluster"]
         assert "user_id" in doc["cluster"]
+        assert "cluster_state_id" in doc["cluster"]
+        assert is_valid_uuid(doc["cluster"]["cluster_state_id"])
 
     def test_s3_uploaded_files(self):
         objects = self._s3_client.list_objects(Bucket=self._s3_bucket_name)
         # it should have one upload each event type
-        assert len(objects['Contents']) == 4
-        assert at_least_one_matches_key(objects['Contents'], "Key", ".*events.*")
-        assert at_least_one_matches_key(objects['Contents'], "Key", ".*clusters.*")
-        assert at_least_one_matches_key(objects['Contents'], "Key", ".*component_versions.*")
-        assert at_least_one_matches_key(objects['Contents'], "Key", ".*infra_envs.*")
+        assert len(objects['Contents']) == 5
+        assert at_least_one_matches_key(objects['Contents'], "Key", ".events/2022-03-08/.*")
+        assert at_least_one_matches_key(objects['Contents'], "Key", ".events/2022-03-09/.*")
+        assert at_least_one_matches_key(objects['Contents'], "Key", ".clusters/[0-9]{4}-[0-9]{2}-[0-9]{2}/.*")
+        assert at_least_one_matches_key(objects['Contents'], "Key", ".component_versions/[0-9]{4}-[0-9]{2}-[0-9]{2}/.*")
+        assert at_least_one_matches_key(objects['Contents'], "Key", ".infra_envs/[0-9]{4}-[0-9]{2}-[0-9]{2}/.*")
 
     def test_s3_exported_cluster_object(self):
         cluster_export = get_first_object_matching_key(
@@ -104,6 +108,8 @@ class TestIntegration:
         random_cluster = random.choice(clusters)
         assert "user_name" not in random_cluster
         assert "user_id" in random_cluster
+        assert "cluster_state_id" in random_cluster
+        assert is_valid_uuid(random_cluster["cluster_state_id"])
 
     @classmethod
     def _get_s3_client(cls):
@@ -155,3 +161,11 @@ def at_least_one_matches_key(objects: List[dict], key: str, match: str) -> bool:
         if re.search(match, obj[key]):
             return True
     return False
+
+
+def is_valid_uuid(uuid: str) -> bool:
+    try:
+        validated_uuid = UUID(uuid)
+    except ValueError:
+        return False
+    return uuid == str(validated_uuid)

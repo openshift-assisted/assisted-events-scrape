@@ -51,7 +51,7 @@ class ElasticsearchStorage:
             helpers.bulk(self._es_client, actions)
         except helpers.BulkIndexError as e:
             capture_exception(e)
-            log.exception()
+            log.exception("captured exception while bulk index")
 
     def _get_new_documents_actions(self, index: str, documents: List[dict],
                                    id_fn: Callable[[dict], str], transform_document_fn: Callable[[dict], dict],
@@ -86,7 +86,7 @@ class ElasticsearchStorage:
             existing_docs = self._scan(index=index, query=query)
         except helpers.ScanError as e:
             capture_exception(e)
-            log.exception()
+            log.exception("captured exception while scanning")
 
         if transform_document_fn is None:
             transform_document_fn = identity
