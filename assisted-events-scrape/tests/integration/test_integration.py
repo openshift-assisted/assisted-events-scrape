@@ -7,7 +7,6 @@ import re
 import json
 import random
 from typing import List
-from uuid import UUID
 from config import EventStoreConfig
 from waiting import TimeoutExpired
 from utils import log
@@ -86,7 +85,6 @@ class TestIntegration:
         assert "user_name" not in doc["cluster"]
         assert "user_id" in doc["cluster"]
         assert "cluster_state_id" in doc["cluster"]
-        assert is_valid_uuid(doc["cluster"]["cluster_state_id"])
 
     def test_s3_uploaded_files(self):
         objects = self._s3_client.list_objects(Bucket=self._s3_bucket_name)
@@ -109,7 +107,6 @@ class TestIntegration:
         assert "user_name" not in random_cluster
         assert "user_id" in random_cluster
         assert "cluster_state_id" in random_cluster
-        assert is_valid_uuid(random_cluster["cluster_state_id"])
 
     @classmethod
     def _get_s3_client(cls):
@@ -161,11 +158,3 @@ def at_least_one_matches_key(objects: List[dict], key: str, match: str) -> bool:
         if re.search(match, obj[key]):
             return True
     return False
-
-
-def is_valid_uuid(uuid: str) -> bool:
-    try:
-        validated_uuid = UUID(uuid)
-    except ValueError:
-        return False
-    return uuid == str(validated_uuid)
