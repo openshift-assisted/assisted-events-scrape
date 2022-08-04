@@ -4,7 +4,6 @@ from copy import deepcopy
 import queue
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
-from uuid import UUID, uuid5
 import dpath.util
 from dpath.exceptions import PathNotFound
 from retry import retry
@@ -16,8 +15,6 @@ from config import SentryConfig, EventStoreConfig
 from assisted_service_client.rest import ApiException
 
 EVENT_CATEGORIES = ["user", "metrics"]
-# Namespace needed for creation of UUID5
-CLUSTER_STATE_ID_NAMESPACE = UUID('f2f6efbc-613f-4747-8873-27fc1a39231e')
 
 
 @dataclass
@@ -177,7 +174,7 @@ class ClusterEventsWorker:
         return get_dict_hash(doc_copy)
 
     def _enrich_cluster(self, doc: dict):
-        doc["cluster_state_id"] = str(uuid5(CLUSTER_STATE_ID_NAMESPACE, self._cluster_checksum(doc)))
+        doc["cluster_state_id"] = self._cluster_checksum(doc)
 
 
 def by_id(item: dict) -> str:
