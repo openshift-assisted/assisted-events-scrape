@@ -1,3 +1,3 @@
-from .cluster_events_worker import ClusterEventsWorker, ClusterEventsWorkerConfig
+from .cluster_events_worker import ClusterEventsWorker, ClusterEventsWorkerConfig, ClusterData
 
-__all__ = ["ClusterEventsWorker", "ClusterEventsWorkerConfig"]
+__all__ = ["ClusterEventsWorker", "ClusterEventsWorkerConfig", "ClusterData"]

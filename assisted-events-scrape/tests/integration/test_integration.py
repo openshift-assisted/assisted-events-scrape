@@ -77,14 +77,30 @@ class TestIntegration:
             }
         }
         response = self._es_client.search(index=self._config.index, body=query)
-        doc = response["hits"]["hits"][0]["_source"]
-        assert "infra_env" in doc["cluster"]
-        assert doc["cluster"]["infra_env"]["org_id"] == "xxxxxxxx"
-        assert doc["cluster"]["infra_env"]["type"] == "full-iso"
+        doc = response["hits"]["hits"][0]
+        source = doc["_source"]
+        assert "infra_env" in source["cluster"]
+        assert source["cluster"]["infra_env"]["org_id"] == "xxxxxxxx"
+        assert source["cluster"]["infra_env"]["type"] == "full-iso"
 
-        assert "user_name" not in doc["cluster"]
-        assert "user_id" in doc["cluster"]
-        assert "cluster_state_id" in doc["cluster"]
+        assert "user_name" not in source["cluster"]
+        assert "user_id" in source["cluster"]
+        assert "cluster_state_id" in source["cluster"]
+
+        query = {
+            "size": 1,
+            "query": {
+                "match_all": {}
+            }
+        }
+        response = self._es_client.search(index=".clusters", body=query)
+        doc = response["hits"]["hits"][0]
+        source = doc["_source"]
+        assert "infra_env" not in source
+        assert "user_name" not in source
+        assert "user_id" in source
+        assert "cluster_state_id" in source
+        assert source["cluster_state_id"] == doc["_id"]
 
     def test_s3_uploaded_files(self):
         objects = self._s3_client.list_objects(Bucket=self._s3_bucket_name)

@@ -1,6 +1,6 @@
 import logging
 from unittest.mock import Mock, call, ANY
-from workers import ClusterEventsWorker, ClusterEventsWorkerConfig
+from workers import ClusterEventsWorker, ClusterEventsWorkerConfig, ClusterData
 from utils import ErrorCounter, Changes, get_dict_hash, get_event_id
 from config import SentryConfig, EventStoreConfig
 from assisted_service_client.rest import ApiException
@@ -10,6 +10,10 @@ class TestClusterEventsWorker:
     def setup(self):
         logging.disable(logging.CRITICAL)
         self.ai_client_mock = Mock()
+        self.ai_client_mock.get_cluster_hosts = Mock(return_value=[
+            {"id": "1", "hostname": "myhost"},
+            {"id": "2", "hostname": "yourhost"},
+        ])
         self.cluster_events_storage_mock = Mock()
         self.es_store = Mock()
         self.error_counter = ErrorCounter()
@@ -37,8 +41,11 @@ class TestClusterEventsWorker:
     def test_error_getting_cluster(self):
         self.ai_client_mock.get_cluster_hosts.side_effect = Exception("Error getting cluster's hosts")
 
-        cluster = {"id": "abcd", "name": "mycluster", "infra_env": {"foo": "bar"}}
-        self.worker.store_events_for_cluster(cluster)
+        cluster_data = ClusterData(
+            {"id": "abcd", "name": "mycluster"},
+            {"foo": "bar", "name": "myinfraenv"},
+        )
+        self.worker.store_events_for_cluster(cluster_data)
         self.ai_client_mock.get_events.assert_not_called()
         self.ai_client_mock.get_versions.assert_not_called()
         self.cluster_events_storage_mock.store.assert_not_called()
@@ -50,8 +57,12 @@ class TestClusterEventsWorker:
     def test_cluster_not_found(self):
         self.ai_client_mock.get_cluster_hosts.side_effect = ApiException(status=404, reason="Not found")
 
-        cluster = {"id": "abcd", "name": "mycluster", "infra_env": {"foo": "bar"}}
-        self.worker.store_events_for_cluster(cluster)
+        cluster_data = ClusterData(
+            {"id": "abcd", "name": "mycluster"},
+            {"foo": "bar", "name": "myinfraenv"},
+        )
+
+        self.worker.store_events_for_cluster(cluster_data)
         self.ai_client_mock.get_events.assert_called_once()
         self.ai_client_mock.get_versions.assert_called_once()
         self.cluster_events_storage_mock.store.assert_called_once()
@@ -63,8 +74,12 @@ class TestClusterEventsWorker:
     def test_error_getting_events(self):
         self.ai_client_mock.get_events.side_effect = Exception("Error getting cluster")
 
-        cluster = {"id": "abcd", "name": "mycluster", "infra_env": {"foo": "bar"}}
-        self.worker.store_events_for_cluster(cluster)
+        cluster_data = ClusterData(
+            {"id": "abcd", "name": "mycluster"},
+            {"foo": "bar", "name": "myinfraenv"},
+        )
+
+        self.worker.store_events_for_cluster(cluster_data)
         self.ai_client_mock.get_cluster_hosts.assert_called_once()
         self.cluster_events_storage_mock.store.assert_not_called()
         self._expect_store_normalized_events_not_called()
@@ -75,8 +90,12 @@ class TestClusterEventsWorker:
     def test_events_not_found(self):
         self.ai_client_mock.get_events.side_effect = ApiException(status=404, reason="Not found")
 
-        cluster = {"id": "abcd", "name": "mycluster", "infra_env": {"foo": "bar"}}
-        self.worker.store_events_for_cluster(cluster)
+        cluster_data = ClusterData(
+            {"id": "abcd", "name": "mycluster"},
+            {"foo": "bar", "name": "myinfraenv"},
+        )
+
+        self.worker.store_events_for_cluster(cluster_data)
         self.ai_client_mock.get_cluster_hosts.assert_called_once()
         self.cluster_events_storage_mock.store.assert_called_once()
         self._expect_store_normalized_events()
@@ -87,8 +106,12 @@ class TestClusterEventsWorker:
     def test_error_storing_events(self):
         self.cluster_events_storage_mock.store.side_effect = Exception("Error getting cluster")
 
-        cluster = {"id": "abcd", "name": "mycluster", "infra_env": {"foo": "bar"}}
-        self.worker.store_events_for_cluster(cluster)
+        cluster_data = ClusterData(
+            {"id": "abcd", "name": "mycluster"},
+            {"foo": "bar", "name": "myinfraenv"},
+        )
+
+        self.worker.store_events_for_cluster(cluster_data)
         self.ai_client_mock.get_cluster_hosts.assert_called_once()
         self.ai_client_mock.get_events.assert_called_once()
         self.ai_client_mock.get_versions.assert_called_once()
@@ -100,8 +123,12 @@ class TestClusterEventsWorker:
     def test_error_storing_normalized_events(self):
         self.es_store.store_changes.side_effect = Exception("Error storing normalized events")
 
-        cluster = {"id": "abcd", "name": "mycluster", "infra_env": {"foo": "bar"}}
-        self.worker.store_events_for_cluster(cluster)
+        cluster_data = ClusterData(
+            {"id": "abcd", "name": "mycluster"},
+            {"foo": "bar", "name": "myinfraenv"},
+        )
+
+        self.worker.store_events_for_cluster(cluster_data)
         self.ai_client_mock.get_cluster_hosts.assert_called_once()
         self.ai_client_mock.get_events.assert_called_once()
         self.ai_client_mock.get_versions.assert_called_once()
@@ -112,9 +139,12 @@ class TestClusterEventsWorker:
 
     def test_storing_events(self):
 
-        cluster = {"id": "abcd", "name": "mycluster", "infra_env": {"foo": "bar"}}
+        cluster_data = ClusterData(
+            {"id": "abcd", "name": "mycluster"},
+            {"foo": "bar", "name": "myinfraenv"},
+        )
 
-        self.worker.store_events_for_cluster(cluster)
+        self.worker.store_events_for_cluster(cluster_data)
 
         self.ai_client_mock.get_cluster_hosts.assert_called_once()
         self.ai_client_mock.get_events.assert_called_once()
@@ -127,13 +157,15 @@ class TestClusterEventsWorker:
 
     def test_storing_events_cluster_with_hosts(self):
 
-        cluster = {
-            "id": "abcd", "name": "mycluster",
-            "hosts": [{"myid": "1"}, {"myid": "2"}, {"myid": "3"}],
-            "infra_env": {"foo": "bar"}
-        }
+        cluster_data = ClusterData(
+            {
+                "id": "abcd", "name": "mycluster",
+                "hosts": [{"myid": "1"}, {"myid": "2"}, {"myid": "3"}],
+            },
+            {"foo": "bar", "name": "myinfraenv"}
+        )
 
-        self.worker.store_events_for_cluster(cluster)
+        self.worker.store_events_for_cluster(cluster_data)
 
         self.ai_client_mock.get_cluster_hosts.assert_not_called()
         self.ai_client_mock.get_events.assert_called_once()
@@ -146,13 +178,15 @@ class TestClusterEventsWorker:
 
     def test_storing_events_cluster_with_empty_infraenv(self):
 
-        cluster = {
-            "id": "abcd", "name": "mycluster",
-            "hosts": [{"id": "1"}, {"id": "2"}, {"id": "3"}, {"notid": "4"}],
-            "infra_env": {}
-        }
+        cluster_data = ClusterData(
+            {
+                "id": "abcd", "name": "mycluster",
+                "hosts": [{"id": "1"}, {"id": "2"}, {"id": "3"}, {"notid": "4"}],
+            },
+            {}
+        )
 
-        self.worker.store_events_for_cluster(cluster)
+        self.worker.store_events_for_cluster(cluster_data)
 
         self.ai_client_mock.get_cluster_hosts.assert_not_called()
         self.ai_client_mock.get_events.assert_called_once()
@@ -164,12 +198,15 @@ class TestClusterEventsWorker:
         assert self.changes.has_changed_in_last_minutes(1)
 
     def test_storing_events_cluster_with_no_infraenv(self):
-        cluster = {
-            "id": "abcd", "name": "mycluster",
-            "hosts": [{"id": "1"}, {"id": "2"}, {"id": "3"}]
-        }
+        cluster_data = ClusterData(
+            {
+                "id": "abcd", "name": "mycluster",
+                "hosts": [{"id": "1"}, {"id": "2"}, {"id": "3"}]
+            },
+            None
+        )
 
-        self.worker.store_events_for_cluster(cluster)
+        self.worker.store_events_for_cluster(cluster_data)
 
         self.ai_client_mock.get_cluster_hosts.assert_not_called()
         self.ai_client_mock.get_events.assert_called_once()
@@ -181,13 +218,15 @@ class TestClusterEventsWorker:
         assert self.changes.has_changed_in_last_minutes(1)
 
     def test_storing_events_cluster_with_empty_hosts(self):
-        cluster = {
-            "id": "abcd", "name": "mycluster",
-            "hosts": [],
-            "infra_env": {"foo": "bar"}
-        }
+        cluster_data = ClusterData(
+            {
+                "id": "abcd", "name": "mycluster",
+                "hosts": [],
+            },
+            {"foo": "bar", "name": "myinfraenv"}
+        )
 
-        self.worker.store_events_for_cluster(cluster)
+        self.worker.store_events_for_cluster(cluster_data)
 
         self.ai_client_mock.get_cluster_hosts.assert_called_once()
         self.ai_client_mock.get_events.assert_called_once()
