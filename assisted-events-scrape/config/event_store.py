@@ -14,7 +14,7 @@ class EventStoreConfig:
     CLUSTER_EVENTS_INDEX = ".clusters"
     COMPONENT_VERSIONS_EVENTS_INDEX = ".component_versions"
     INFRA_ENVS_EVENTS_INDEX = ".infra_envs"
-    CLUSTER_EVENTS_IGNORE_FIELDS_INTERNAL = ["cluster_state_id"]
+    CLUSTER_EVENTS_IGNORE_FIELDS_INTERNAL = ["cluster_state_id", "infra_env"]
 
     events_index: str
     cluster_events_index: str

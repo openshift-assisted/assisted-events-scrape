@@ -27,7 +27,7 @@ class ClusterEventsStorage:
         self._index = index
         self._cache_event_count_per_cluster = {}
 
-    def store(self, component_versions, cluster, event_list):
+    def store(self, component_versions, cluster, event_list, infra_env):
         cluster_id = cluster["id"]
 
         event_count = len(event_list)
@@ -35,34 +35,35 @@ class ClusterEventsStorage:
             log.info(f"Cluster {cluster_id} has {event_count} event records, logging only {MAX_EVENTS}")
             event_list = event_list[:MAX_EVENTS]
 
-        metadata_json = get_metadata_json(cluster, component_versions)
+        metadata = get_metadata(cluster, component_versions)
+        metadata["cluster"]["infra_env"] = infra_env
 
-        cluster_bash_data = process_metadata(metadata_json)
-        event_names = get_cluster_object_names(cluster_bash_data)
+        cluster_metadata = process_metadata(metadata)
+        event_names = get_cluster_object_names(cluster_metadata)
 
-        events = self.process_events(cluster_bash_data, event_list, event_names)
+        events = self.process_events(cluster_metadata, event_list, event_names)
         self.store_events(events)
 
         if self.does_cluster_needs_full_update(cluster_id, event_list):
             log.info(f"Cluster {cluster_id} logged events are not same as the event count, logging all clusters events")
-            events = self.process_events(cluster_bash_data, event_list, event_names)
+            events = self.process_events(cluster_metadata, event_list, event_names)
             self.store_events(events, only_new_events=False)
 
-    def process_events(self, cluster_bash_data, event_list, event_names):
+    def process_events(self, cluster_metadata, event_list, event_names):
         for event in event_list[::-1]:
             if process.is_event_skippable(event):
                 continue
 
-            cluster_bash_data["no_name_message"] = get_no_name_message(event["message"], event_names)
-            cluster_bash_data["inventory_url"] = self._inventory_url
+            cluster_metadata["no_name_message"] = get_no_name_message(event["message"], event_names)
+            cluster_metadata["inventory_url"] = self._inventory_url
 
             if "props" in event:
                 event["event.props"] = json.loads(event["props"])
 
-            process_event_doc(event, cluster_bash_data)
-            yield cluster_bash_data
+            process_event_doc(event, cluster_metadata)
+            yield cluster_metadata
             for key in event:
-                _ = cluster_bash_data.pop(key, None)
+                _ = cluster_metadata.pop(key, None)
 
     def store_events(self, events, only_new_events=True):
         for event in events:
@@ -110,24 +111,24 @@ def get_no_name_message(event_message: str, event_names: list):
     return event_message
 
 
-def get_cluster_object_names(cluster_bash_data):
+def get_cluster_object_names(cluster_metadata):
     strings_to_remove = []
-    for host in cluster_bash_data["cluster"]["hosts"]:
+    for host in cluster_metadata["cluster"]["hosts"]:
         host_name = host.get("requested_hostname", None)
         if host_name:
             strings_to_remove.append(host_name)
-    strings_to_remove.append(cluster_bash_data["cluster"]["name"])
+    strings_to_remove.append(cluster_metadata["cluster"]["name"])
     return strings_to_remove
 
 
-def process_metadata(metadata_json):
-    p = process.GetProcessedMetadataJson(metadata_json)
+def process_metadata(metadata):
+    p = process.GetProcessedMetadataJson(metadata)
     return p.get_processed_json()
 
 
-def process_event_doc(event_data, cluster_bash_data):
-    cluster_bash_data.update(event_data)
+def process_event_doc(event_data, cluster_metadata):
+    cluster_metadata.update(event_data)
 
 
-def get_metadata_json(cluster: dict, component_versions: dict):
+def get_metadata(cluster: dict, component_versions: dict):
     return {'cluster': cluster, **component_versions}

@@ -18,6 +18,12 @@ EVENT_CATEGORIES = ["user", "metrics"]
 
 
 @dataclass
+class ClusterData:
+    cluster: dict
+    infra_env: dict
+
+
+@dataclass
 class ClusterEventsWorkerConfig:
     max_workers: int
     sentry: SentryConfig
@@ -42,24 +48,27 @@ class ClusterEventsWorker:
         with ThreadPoolExecutor(max_workers=self._config.max_workers) as self._executor:
             cluster_count = len(clusters)
             for cluster in clusters:
+                cluster_data = ClusterData(cluster, None)
                 cluster_id = cluster["id"]
-                cluster["infra_env"] = {}
                 if cluster_id in infraenvs:
-                    cluster["infra_env"] = infraenvs[cluster_id]
-                self._executor.submit(self.store_events_for_cluster, cluster)
+                    cluster_data.infra_env = infraenvs[cluster_id]
+                self._executor.submit(self.store_events_for_cluster, cluster_data)
             log.info(f"Sent {cluster_count} clusters for processing...")
 
-    def store_events_for_cluster(self, cluster: dict) -> None:
+    def store_events_for_cluster(self, cluster_data: ClusterData) -> None:
+        cluster = cluster_data.cluster
+        infra_env = cluster_data.infra_env
         try:
             Anonymizer.anonymize_cluster(cluster)
             self._enrich_cluster(cluster)
+
             log.debug(f"Storing cluster: {cluster}")
-            if "hosts" not in cluster or len(cluster["hosts"]) == 0:
-                cluster["hosts"] = self.__get_hosts(cluster["id"])
+
             events = self.__get_events(cluster["id"])
             component_versions = self.__get_versions()
-            self._store_normalized_events(component_versions, cluster, events)
-            self.cluster_events_storage.store(component_versions, cluster, events)
+
+            self._store_normalized_events(component_versions, cluster, events, infra_env)
+            self.cluster_events_storage.store(component_versions, cluster, events, infra_env)
             self._config.changes.set_changed()
             log.debug(f'Storing events for cluster {cluster["id"]}')
         except Exception as e:
@@ -121,17 +130,15 @@ class ClusterEventsWorker:
             if work_item:
                 work_item.future.cancel()
 
-    def _store_normalized_events(self, component_versions, cluster, event_list):
+    def _store_normalized_events(self, component_versions, cluster, event_list, infra_env):
         try:
             cluster_id_filter = {
                 "term": {
                     "cluster_id": cluster["id"]
                 }
             }
-            cluster_copy = deepcopy(cluster)
-            infra_env = cluster_copy.get("infra_env")
+
             if infra_env:
-                del cluster_copy["infra_env"]
                 self._es_store.store_changes(
                     index=EventStoreConfig.INFRA_ENVS_EVENTS_INDEX,
                     documents=[infra_env],
@@ -141,7 +148,7 @@ class ClusterEventsWorker:
 
             self._es_store.store_changes(
                 index=EventStoreConfig.CLUSTER_EVENTS_INDEX,
-                documents=[cluster_copy],
+                documents=[cluster],
                 id_fn=self._cluster_checksum,
                 filter_by=cluster_id_filter
             )
@@ -173,12 +180,24 @@ class ClusterEventsWorker:
             doc_copy["hosts"].sort(key=by_id)
         return get_dict_hash(doc_copy)
 
-    def _enrich_cluster(self, doc: dict):
-        doc["cluster_state_id"] = self._cluster_checksum(doc)
+    def add_cluster_state_id(self, doc: dict):
+        doc_copy = deepcopy(doc)
+        doc_copy["cluster_state_id"] = self._cluster_checksum(doc)
+        return doc_copy
+
+    def _enrich_cluster(self, cluster: dict):
+        if "hosts" not in cluster or len(cluster["hosts"]) == 0:
+            cluster["hosts"] = self.__get_hosts(cluster["id"])
+
+        cluster["cluster_state_id"] = self._cluster_checksum(cluster)
 
 
 def by_id(item: dict) -> str:
-    # ID should always be there, if not consider it empty string
+    """
+    This function is used to sort host array by id.
+    `id` field should always be present, if not, we don't want to panic and we
+    just return empty string
+    """
     return item.get("id", "")
 
 
