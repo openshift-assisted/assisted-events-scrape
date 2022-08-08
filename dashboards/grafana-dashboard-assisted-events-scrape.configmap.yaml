@@ -13,7 +13,10 @@ data:
         "list": [
           {
             "builtIn": 1,
-            "datasource": "-- Grafana --",
+            "datasource": {
+              "type": "datasource",
+              "uid": "grafana"
+            },
             "enable": true,
             "hide": true,
             "iconColor": "rgba(0, 211, 255, 1)",
@@ -31,12 +34,16 @@ data:
       "editable": true,
       "fiscalYearStartMonth": 0,
       "graphTooltip": 1,
-      "iteration": 1649686877703,
+      "iteration": 1659948202036,
       "links": [],
       "liveNow": false,
       "panels": [
         {
           "collapsed": false,
+          "datasource": {
+            "type": "prometheus",
+            "uid": "tuHy3WB7z"
+          },
           "gridPos": {
             "h": 1,
             "w": 24,
@@ -45,6 +52,15 @@ data:
           },
           "id": 23,
           "panels": [],
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "tuHy3WB7z"
+              },
+              "refId": "A"
+            }
+          ],
           "title": "Events Scraper",
           "type": "row"
         },
@@ -529,12 +545,212 @@ data:
           "type": "timeseries"
         },
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "description": "Events scraped from assisted-service",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 0,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              }
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Emitted/imported ratio"
+                },
+                "properties": [
+                  {
+                    "id": "custom.axisPlacement",
+                    "value": "right"
+                  },
+                  {
+                    "id": "custom.lineWidth",
+                    "value": 1
+                  },
+                  {
+                    "id": "custom.lineStyle",
+                    "value": {
+                      "dash": [
+                        10,
+                        15
+                      ],
+                      "fill": "dash"
+                    }
+                  },
+                  {
+                    "id": "custom.pointSize",
+                    "value": 1
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Emitted/normalized events ratio"
+                },
+                "properties": [
+                  {
+                    "id": "custom.axisPlacement",
+                    "value": "right"
+                  },
+                  {
+                    "id": "custom.lineStyle",
+                    "value": {
+                      "dash": [
+                        10,
+                        15
+                      ],
+                      "fill": "dash"
+                    }
+                  },
+                  {
+                    "id": "custom.pointSize",
+                    "value": 1
+                  }
+                ]
+              }
+            ]
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 17
+          },
+          "id": 42,
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
+            }
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
+              "editorMode": "code",
+              "expr": "increase(assisted_installer_events_max_event_id{namespace=\"$namespace\"}[1h])",
+              "legendFormat": "Emitted events in the last hour",
+              "range": true,
+              "refId": "A"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
+              "editorMode": "code",
+              "expr": "sum(increase(elasticsearch_indices_shards_docs{primary=\"true\",namespace=\"$namespace\",index=\"assisted-service-events-v3\"}[1h]))",
+              "hide": false,
+              "legendFormat": "Legacy events imported in the last hour",
+              "range": true,
+              "refId": "B"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
+              "editorMode": "code",
+              "expr": "sum(increase(elasticsearch_indices_shards_docs{primary=\"true\",namespace=\"$namespace\",index=\".events\"}[1h]))",
+              "hide": false,
+              "legendFormat": "Normalized events imported in the last hour",
+              "range": true,
+              "refId": "C"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
+              "editorMode": "code",
+              "expr": "increase(assisted_installer_events_max_event_id{namespace=\"$namespace\"}[1h]) / on (namespace) sum(increase(elasticsearch_indices_shards_docs{primary=\"true\",namespace=\"$namespace\",index=\"assisted-service-events-v3\"}[1h])) by (namespace)",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "Emitted/imported ratio",
+              "range": true,
+              "refId": "D"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
+              "editorMode": "code",
+              "expr": "increase(assisted_installer_events_max_event_id{namespace=\"$namespace\"}[1h]) / on (namespace) sum(increase(elasticsearch_indices_shards_docs{primary=\"true\",namespace=\"$namespace\",index=\".events\"}[1h])) by (namespace)",
+              "hide": false,
+              "legendFormat": "Emitted/normalized events ratio",
+              "range": true,
+              "refId": "E"
+            }
+          ],
+          "title": "Events scraped",
+          "type": "timeseries"
+        },
+        {
           "collapsed": true,
+          "datasource": {
+            "type": "prometheus",
+            "uid": "tuHy3WB7z"
+          },
           "gridPos": {
             "h": 1,
             "w": 24,
             "x": 0,
-            "y": 17
+            "y": 25
           },
           "id": 38,
           "panels": [
@@ -627,16 +843,29 @@ data:
               "type": "logs"
             }
           ],
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "tuHy3WB7z"
+              },
+              "refId": "A"
+            }
+          ],
           "title": "[PRODUCTION] Logs",
           "type": "row"
         },
         {
           "collapsed": true,
+          "datasource": {
+            "type": "prometheus",
+            "uid": "tuHy3WB7z"
+          },
           "gridPos": {
             "h": 1,
             "w": 24,
             "x": 0,
-            "y": 18
+            "y": 26
           },
           "id": 35,
           "panels": [
@@ -729,19 +958,28 @@ data:
               "type": "logs"
             }
           ],
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "tuHy3WB7z"
+              },
+              "refId": "A"
+            }
+          ],
           "title": "[STAGE] Logs",
           "type": "row"
         }
       ],
       "refresh": "",
-      "schemaVersion": 35,
+      "schemaVersion": 36,
       "style": "dark",
       "tags": [],
       "templating": {
         "list": [
           {
             "current": {
-              "selected": false,
+              "selected": true,
               "text": "assisted-installer-production",
               "value": "assisted-installer-production"
             },
@@ -768,7 +1006,7 @@ data:
           },
           {
             "current": {
-              "selected": true,
+              "selected": false,
               "text": "app-sre-prod-04-prometheus",
               "value": "app-sre-prod-04-prometheus"
             },
@@ -866,13 +1104,13 @@ data:
         ]
       },
       "time": {
-        "from": "now-30m",
+        "from": "now-3h",
         "to": "now"
       },
       "timepicker": {},
       "timezone": "",
       "title": "Assisted Events Scrape",
       "uid": "eUOTqvP7z",
-      "version": 1,
+      "version": 2,
       "weekStart": ""
     }
