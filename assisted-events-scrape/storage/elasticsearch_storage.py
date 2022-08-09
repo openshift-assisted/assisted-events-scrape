@@ -48,8 +48,8 @@ class ElasticsearchStorage:
     @retry((TransportError, ConnectionTimeout), delay=1, tries=3, backoff=2, max_delay=4, jitter=1)
     def _bulk(self, actions):
         try:
-            helpers.bulk(self._es_client, actions)
-        except helpers.BulkIndexError as e:
+            helpers.bulk(self._es_client, actions, raise_on_error=False)
+        except Exception as e:
             capture_exception(e)
             log.exception("captured exception while bulk index")
 
@@ -99,6 +99,9 @@ class ElasticsearchStorage:
             # In this case, there are no existing documents
             pass
 
+        # we are using create operation: should not overwrite an existing doc,
+        # as it could change its date and mess up export
+
         for d in documents:
             doc_id = id_fn(d)
             if doc_id not in all_ids:
@@ -106,7 +109,7 @@ class ElasticsearchStorage:
                     "_index": index,
                     "_id": doc_id,
                     "_source": transform_document_fn(d),
-                    "_op_type": "index"
+                    "_op_type": "create"
                 }
 
     @retry((TransportError, ConnectionTimeout), delay=1, tries=3, backoff=2, max_delay=4, jitter=1)
