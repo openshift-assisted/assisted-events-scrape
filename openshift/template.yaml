@@ -158,6 +158,7 @@ objects:
   metadata:
     name: ccx-export
   spec:
+    suspend: ${{CCX_EXPORT_CRON_SUSPEND}}
     schedule: "${CCX_EXPORT_CRON_TIME}"
     jobTemplate:
       spec:
@@ -267,3 +268,5 @@ parameters:
   value: master_user_password
 - name: CCX_EXPORT_CRON_TIME
   value: "0 2 * * *"
+- name: CCX_EXPORT_CRON_SUSPEND
+  value: "false"
