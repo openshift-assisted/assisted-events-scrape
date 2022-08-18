@@ -13,12 +13,7 @@ RUN curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.12.0/kind-linux-amd64 &&\
     install kind /usr/local/bin/kind && rm -f kind
 
 COPY --from=quay.io/openshift/origin-cli:4.10 /usr/bin/oc /usr/bin/kubectl /usr/bin/
-
-ENV KUBECONFORM_VERSION=v0.4.13
-RUN curl -L -sS -o kubeconform-linux-amd64.tar.gz https://github.com/yannh/kubeconform/releases/download/${KUBECONFORM_VERSION}/kubeconform-linux-amd64.tar.gz &&\
-    tar xzf kubeconform-linux-amd64.tar.gz &&\
-    install kubeconform /usr/local/bin &&\
-    rm -f kubeconform kubeconform-linux-amd64.tar.gz
+COPY --from=ghcr.io/yannh/kubeconform:v0.4.14 /kubeconform /usr/bin
 
 COPY ./requirements.txt ./requirements-dev.txt ./
 
