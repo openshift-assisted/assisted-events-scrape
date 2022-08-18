@@ -7,17 +7,12 @@ RUN dnf update -y && dnf install -y epel-release &&\
     dnf install -y jq gcc git make podman-remote docker-ce-cli skopeo python3 python3-pip &&\
     dnf clean all &&\
     python3 -m venv ${VIRTUAL_ENV:-/opt/venv} && python3 -m pip install --upgrade pip
+
 # Install kind
 RUN curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.12.0/kind-linux-amd64 &&\
     install kind /usr/local/bin/kind && rm -f kind
 
-ENV OC_VERSION=4.10.8
-# Install kubectl and oc
-RUN curl -sS -o oc-${OC_VERSION}.tar.gz https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp/4.10.8/openshift-client-linux-${OC_VERSION}.tar.gz &&\
-    tar xzvf oc-${OC_VERSION}.tar.gz &&\
-    install kubectl /usr/local/bin/kubectl &&\
-    install oc /usr/local/bin/oc &&\
-    rm -f oc-${OC_VERSION}.tar.gz README.md kubectl oc
+COPY --from=quay.io/openshift/origin-cli:4.10 /usr/bin/oc /usr/bin/kubectl /usr/bin/
 
 ENV KUBECONFORM_VERSION=v0.4.13
 RUN curl -L -sS -o kubeconform-linux-amd64.tar.gz https://github.com/yannh/kubeconform/releases/download/${KUBECONFORM_VERSION}/kubeconform-linux-amd64.tar.gz &&\
