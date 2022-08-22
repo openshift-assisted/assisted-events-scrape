@@ -1,8 +1,8 @@
 #!/bin/env python3
 
-import boto3
-import os
 from datetime import datetime, timezone
+import os
+import boto3
 
 
 def delete_s3_objects():
