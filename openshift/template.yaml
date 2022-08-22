@@ -229,7 +229,7 @@ objects:
               image: ${IMAGE_NAME}:${IMAGE_TAG}
               imagePullPolicy: ${IMAGE_PULL_POLICY}
               command:
-              - ./tools/delete_from_ccx_s3_bucket.py
+              - ccx_export_cleanup
               env:
               - name: AWS_S3_BUCKET
                 valueFrom:

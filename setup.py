@@ -35,6 +35,7 @@ setuptools.setup(
         'console_scripts': [
             'events_scrape = events_scrape.events_scrape:main',
             'ccx_export = ccx_export:export_events',
+            'ccx_export_cleanup = ccx_export:delete_s3_objects',
         ],
     },
     include_package_data=True,
