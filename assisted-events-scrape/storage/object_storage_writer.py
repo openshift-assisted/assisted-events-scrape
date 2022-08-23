@@ -62,9 +62,12 @@ class ObjectStorageWriter:
                 if options.partition_key:
                     partition = self._get_partition_from_doc(document, options.partition_key)
                 offset.setOffset(doc_offset, partition)
+
             log.debug(f"Writing document: {document}")
             document_str = json.dumps(document)
             streams[key].write(document_str + "\n")
+            del document
+            del document_str
 
         for stream in streams.values():
             stream.close()
