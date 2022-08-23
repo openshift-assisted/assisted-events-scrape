@@ -77,6 +77,7 @@ class EventsExporter:
             docs = helpers.scan(self._es_client, index=stream.name, size=self._config.chunk_size,
                                 query=query, request_timeout=DEFAULT_TIMEOUT)
             all_docs = chain(all_docs, docs)
+
         return all_docs
 
     # pylint: disable=no-self-use

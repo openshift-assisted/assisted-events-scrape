@@ -25,3 +25,10 @@ class TestDateOffset:
 
         offset = self._offset.getOffset("B")
         assert offset == "2024-02-01"
+
+    def test_offset_with_mixed_date_type(self):
+        self._offset.setOffset("2022-01-01 23:59:59", "A")
+        self._offset.setOffset("Wed Jan 02 00:00:01 GMT 2022", "A")
+
+        offset = self._offset.getOffset("A")
+        assert offset == "Wed Jan 02 00:00:01 GMT 2022"
