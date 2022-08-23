@@ -1,5 +1,6 @@
 from typing import Iterable, List
 from dataclasses import dataclass
+from datetime import timezone
 from dateutil.parser import parse
 from opensearchpy import OpenSearch, helpers
 from opensearchpy.exceptions import NotFoundError, TransportError, ConnectionTimeout
@@ -31,7 +32,9 @@ class DateOffset:
         In this case offset will be kept track with `None` key
         """
         if partition in self._offsets:
-            if parse(self._offsets[partition]) > parse(offset):
+            current_offset = parse(self._offsets[partition]).replace(tzinfo=timezone.utc)
+            proposed_offset = parse(offset).replace(tzinfo=timezone.utc)
+            if current_offset > proposed_offset:
                 return None
         self._offsets[partition] = offset
 
