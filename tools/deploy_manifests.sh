@@ -26,6 +26,7 @@ ${cli} wait ${ns} --timeout=300s --for=condition=Available deployment --all
 ${cli} wait ${ns} --timeout=300s --for=condition=Ready pods -l app=elasticsearch-master
 ${cli} wait ${ns} --timeout=300s --for=condition=Ready pods -l app=mockserver
 ${cli} wait ${ns} --timeout=300s --for=condition=Ready pods -l app=minio
+${cli} wait ${ns} --timeout=120s --for=condition=complete job ai-events-minio-make-bucket-job ai-events-minio-make-user-job
 
 # Write elasticsearch index templates
 if [[ "${platform}" == "ocp" ]]; then
