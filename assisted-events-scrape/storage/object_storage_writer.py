@@ -1,4 +1,5 @@
 from typing import Iterable, Callable
+import gc
 import json
 import boto3
 import smart_open
@@ -66,8 +67,8 @@ class ObjectStorageWriter:
             log.debug(f"Writing document: {document}")
             document_str = json.dumps(document)
             streams[key].write(document_str + "\n")
-            del document
-            del document_str
+
+            gc.collect()
 
         for stream in streams.values():
             stream.close()
