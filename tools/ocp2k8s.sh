@@ -9,6 +9,7 @@ export IMAGE_TAG=$(echo $image | cut -d: -f2)
 export IMAGE_PULL_POLICY=Never
 export CCX_DATE_FROM=2022-03-08
 export CCX_DATE_TO=2022-03-10
+export LOGLEVEL="debug"
 
 # Get currently exported variables
 current_envs=$(env | grep -f <(oc process --local=true -f openshift/template.yaml --parameters=true | tail -n+2 | awk '{ print $1 }') | tr '\n' ' ')
