@@ -156,6 +156,7 @@ class ClusterEventsWorker:
                 index=EventStoreConfig.EVENTS_INDEX,
                 documents=event_list,
                 id_fn=get_event_id,
+                transform_document_fn=add_event_id,
                 filter_by=cluster_id_filter
             )
             self._es_store.store_changes(
@@ -208,6 +209,12 @@ def add_timestamp(doc: dict) -> dict:
     # produces it with `Z` notation. To be consistent, we get UTC time
     # without tz info, and append 'Z' in the end
     d["timestamp"] = datetime.utcnow().isoformat() + "Z"
+    return d
+
+
+def add_event_id(doc: dict) -> dict:
+    d = deepcopy(doc)
+    d["event_id"] = get_event_id(doc)
     return d
 
 
