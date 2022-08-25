@@ -284,7 +284,7 @@ class TestClusterEventsWorker:
             call(index=self.config.events.cluster_events_index, filter_by=ANY,
                  documents=ANY, id_fn=ANY),
             call(index=self.config.events.events_index, documents=ANY, filter_by=ANY,
-                 id_fn=get_event_id),
+                 id_fn=get_event_id, transform_document_fn=ANY),
             call(index=self.config.events.component_versions_events_index,
                  documents=ANY, id_fn=ANY, transform_document_fn=ANY),
         ]

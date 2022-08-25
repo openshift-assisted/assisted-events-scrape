@@ -124,6 +124,18 @@ class TestIntegration:
         assert "user_id" in random_cluster
         assert "cluster_state_id" in random_cluster
 
+    def test_s3_exported_events_object(self):
+        events_export = get_first_object_matching_key(
+            client=self._s3_client,
+            bucket=self._s3_bucket_name,
+            match=".*events.*")
+        events = [json.loads(line) for line in events_export["Body"].readlines()]
+
+        random_event = random.choice(events)
+        assert "event_time" in random_event
+        assert "cluster_id" in random_event
+        assert "event_id" in random_event
+
     @classmethod
     def _get_s3_client(cls):
         endpoint_url = os.getenv("AWS_S3_ENDPOINT")
