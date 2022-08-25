@@ -165,13 +165,21 @@ objects:
         ttlSecondsAfterFinished: 600
         template:
           spec:
+            volumes:
+            - name: temp
+              emptyDir: {}
             containers:
             - name: ccx-s3-export
               image: ${IMAGE_NAME}:${IMAGE_TAG}
               imagePullPolicy: ${IMAGE_PULL_POLICY}
               command:
               - ccx_export
+              volumeMounts:
+              - mountPath: /tmp
+                name: temp
               env:
+              - name: TMPDIR
+                value: /tmp
               - name: LOGLEVEL
                 value: "${CCX_EXPORT_LOGLEVEL}"
               - name: EVENT_EXPORT_STREAM_CHUNK_SIZE

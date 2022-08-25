@@ -1,4 +1,5 @@
 from typing import Iterable, Callable
+import tempfile
 import json
 import boto3
 import smart_open
@@ -43,18 +44,30 @@ class ObjectStorageWriter:
         if options:
             offset = DateOffset()
 
+        buff = {}
         streams = {}
         for document in documents:
             key = key_fn(document)
             stream = streams.get(key)
             if not stream:
-                # 5MB is the minimum part size allowed by AWS S3
-                # We need this number as low as possible, as we will have several multipart upload
-                # in progress when importing large datasets
+                # pylint: disable=consider-using-with
+                buff[key] = tempfile.NamedTemporaryFile(delete=True)
+                # pylint: enable=consider-using-with
+
+                transport_params = dict(
+                    client=self.client,
+                    # 5MB is the minimum part size allowed by AWS S3
+                    # We need this number as low as possible, as we will have several multipart upload
+                    # in progress when importing large datasets
+                    min_part_size=5 * 1024 ** 2,
+                    # We also buffer on disk
+                    writebuffer=buff[key]
+                )
+
                 streams[key] = smart_open.open(
                     f"s3://{self.config.bucket}/{key}",
                     "w",
-                    transport_params=dict(client=self.client, min_part_size=5 * 1024 ** 2)
+                    transport_params=transport_params
                 )
 
             if options:
@@ -72,6 +85,8 @@ class ObjectStorageWriter:
 
         for stream in streams.values():
             stream.close()
+        for buff in buff.values():
+            buff.close()
         return offset
 
     # pylint: disable=no-self-use
