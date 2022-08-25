@@ -1,5 +1,4 @@
 from typing import Iterable, Callable
-import gc
 import json
 import boto3
 import smart_open
@@ -49,10 +48,13 @@ class ObjectStorageWriter:
             key = key_fn(document)
             stream = streams.get(key)
             if not stream:
+                # 5MB is the minimum part size allowed by AWS S3
+                # We need this number as low as possible, as we will have several multipart upload
+                # in progress when importing large datasets
                 streams[key] = smart_open.open(
                     f"s3://{self.config.bucket}/{key}",
                     "w",
-                    transport_params=dict(client=self.client)
+                    transport_params=dict(client=self.client, min_part_size=5 * 1024 ** 2)
                 )
 
             if options:
@@ -67,8 +69,6 @@ class ObjectStorageWriter:
             log.debug(f"Writing document: {document}")
             document_str = json.dumps(document)
             streams[key].write(document_str + "\n")
-
-            gc.collect()
 
         for stream in streams.values():
             stream.close()
