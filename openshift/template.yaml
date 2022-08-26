@@ -169,6 +169,13 @@ objects:
             - name: ccx-s3-export
               image: ${IMAGE_NAME}:${IMAGE_TAG}
               imagePullPolicy: ${IMAGE_PULL_POLICY}
+              resources:
+                limits:
+                  memory: ${CCX_EXPORT_MEMORY_LIMIT}
+                  cpu: ${CCX_EXPORT_CPU_LIMIT}
+                requests:
+                  memory: ${CCX_EXPORT_MEMORY_REQUEST}
+                  cpu: ${CCX_EXPORT_CPU_REQUEST}
               command:
               - ccx_export
               env:
@@ -225,16 +232,16 @@ objects:
         template:
           spec:
             containers:
-            - name: ccx-s3-export
+            - name: ccx-s3-export-cleanup
               image: ${IMAGE_NAME}:${IMAGE_TAG}
               imagePullPolicy: ${IMAGE_PULL_POLICY}
               resources:
                 limits:
-                  memory: ${CCX_EXPORT_MEMORY_LIMIT}
-                  cpu: ${CCX_EXPORT_CPU_LIMIT}
+                  memory: ${CCX_EXPORT_CLEANUP_MEMORY_LIMIT}
+                  cpu: ${CCX_EXPORT_CLEANUP_CPU_LIMIT}
                 requests:
-                  memory: ${CCX_EXPORT_MEMORY_REQUEST}
-                  cpu: ${CCX_EXPORT_CPU_REQUEST}
+                  memory: ${CCX_EXPORT_CLEANUP_MEMORY_REQUEST}
+                  cpu: ${CCX_EXPORT_CLEANUP_CPU_REQUEST}
               command:
               - ccx_export_cleanup
               env:
@@ -329,3 +336,11 @@ parameters:
   value: "true"
 - name: CCX_EXPORT_CLEANUP_CRON_TIME
   value: "0 8 * * *"
+- name: CCX_EXPORT_CLEANUP_MEMORY_REQUEST
+  value: "128Mi"
+- name: CCX_EXPORT_CLEANUP_CPU_REQUEST
+  value: "10m"
+- name: CCX_EXPORT_CLEANUP_MEMORY_LIMIT
+  value: "256Mi"
+- name: CCX_EXPORT_CLEANUP_CPU_LIMIT
+  value: "1"
