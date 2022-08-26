@@ -228,6 +228,13 @@ objects:
             - name: ccx-s3-export
               image: ${IMAGE_NAME}:${IMAGE_TAG}
               imagePullPolicy: ${IMAGE_PULL_POLICY}
+              resources:
+                limits:
+                  memory: ${CCX_EXPORT_MEMORY_LIMIT}
+                  cpu: ${CCX_EXPORT_CPU_LIMIT}
+                requests:
+                  memory: ${CCX_EXPORT_MEMORY_REQUEST}
+                  cpu: ${CCX_EXPORT_CPU_REQUEST}
               command:
               - ccx_export_cleanup
               env:
@@ -310,6 +317,14 @@ parameters:
   value: "0 2 * * *"
 - name: CCX_EXPORT_CRON_SUSPEND
   value: "false"
+- name: CCX_EXPORT_MEMORY_REQUEST
+  value: "2Gi"
+- name: CCX_EXPORT_CPU_REQUEST
+  value: "1"
+- name: CCX_EXPORT_MEMORY_LIMIT
+  value: "2Gi"
+- name: CCX_EXPORT_CPU_LIMIT
+  value: "1"
 - name: CCX_EXPORT_CLEANUP_CRON_SUSPEND
   value: "true"
 - name: CCX_EXPORT_CLEANUP_CRON_TIME
