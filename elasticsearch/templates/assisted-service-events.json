@@ -1,8 +1,7 @@
 {
   "order" : 0,
   "index_patterns" : [
-    "assisted-service-events*",
-    "restored_assisted-service-events*"
+    "assisted-service-events-v3-*"
   ],
   "settings" : {
     "index" : {
@@ -11,6 +10,19 @@
       "mapping" : {
         "total_fields" : {
           "limit" : "10000"
+        }
+      }
+    },
+    "analysis": {
+      "analyzer": {
+        "comma_separated": {
+          "tokenizer": "comma_separated"
+        }
+      },
+      "tokenizer": {
+        "comma_separated": {
+          "type": "pattern",
+          "pattern": ","
         }
       }
     }
@@ -50,10 +62,22 @@
         "properties": {
           "user_id": {
             "type": "keyword"
+          },
+          "tags": {
+            "type": "text",
+            "analyzer": "comma_separated",
+            "fields": {
+              "keyword": {
+                "ignore_above": 1024,
+                "type": "keyword"
+              }
+            }
           }
         }
       }
     }
   },
-  "aliases" : { }
+  "aliases" : {
+    "assisted-service-events": {}
+  }
 }

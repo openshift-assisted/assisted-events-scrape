@@ -1,6 +1,7 @@
 import re
 import time
 import json
+from datetime import datetime
 from utils import log, get_event_id
 from clients import create_es_client_from_env
 from config import ScraperConfig
@@ -18,13 +19,13 @@ class ClusterEventsStorage:
     def create_with_inventory_client(cls, inventory_client: InventoryClient,
                                      config: ScraperConfig) -> 'ClusterEventsStorage':
         es_client = create_es_client_from_env()
-        return cls(inventory_client, es_client, config.inventory_url, config.elasticsearch.index)
+        return cls(inventory_client, es_client, config.inventory_url, config.elasticsearch.index_prefix)
 
-    def __init__(self, assisted_client, es_client, inventory_url, index):
+    def __init__(self, assisted_client, es_client, inventory_url, index_prefix):
         self._client = assisted_client
         self._es_client = es_client
         self._inventory_url = inventory_url
-        self._index = index
+        self._index_prefix = index_prefix
         self._cache_event_count_per_cluster = {}
 
     def store(self, component_versions, cluster, event_list, infra_env):
@@ -90,13 +91,15 @@ class ClusterEventsStorage:
 
     def get_cluster_event_count_on_es_db(self, cluster_id):
         time.sleep(1)
-        results = self._es_client.search(index=self._index,
+        index_pattern = self._index_prefix + "*"
+        results = self._es_client.search(index=index_pattern,
                                          body={"query": {"match_phrase": {"cluster.id": cluster_id}}})
         return results["hits"]["total"]["value"]
 
     def log_doc(self, doc, id_):
         try:
-            res = self._es_client.create(index=self._index, body=doc, id=id_)
+            index = self._index_prefix + datetime.today().strftime("%Y-%m")
+            res = self._es_client.create(index=index, body=doc, id=id_)
         except opensearchpy.exceptions.ConflictError:
             log.debug("Hit logged event")
             return None
