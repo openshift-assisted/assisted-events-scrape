@@ -36,15 +36,17 @@ class TestIntegration:
             cls._s3_client.delete_object(Bucket=cls._s3_bucket_name, Key=obj["Key"])
 
     def test_event_scrape(self, _wait_for_elastic):
+        aggregated_events_index = self._config.index_prefix + "*"
         expected_count_idx = {
-            self._config.index: ALL_EVENTS_NUMBER,
+            aggregated_events_index: ALL_EVENTS_NUMBER,
             EventStoreConfig.EVENTS_INDEX: ALL_EVENTS_NUMBER,
             EventStoreConfig.CLUSTER_EVENTS_INDEX: ALL_CLUSTERS_NUMBER,
             EventStoreConfig.COMPONENT_VERSIONS_EVENTS_INDEX: ALL_VERSIONS_NUMBER,
         }
 
+        index_pattern = f"{self._config.index_prefix}*"
         # As elasticsearch is eventually consistent, make sure data is synced
-        self._es_client.indices.refresh(index=self._config.index)
+        self._es_client.indices.refresh(index=index_pattern)
 
         def check_document_count(index, expected_count):
             documents_count = self._es_client.count(index=index)['count']
@@ -76,7 +78,10 @@ class TestIntegration:
                 }
             }
         }
-        response = self._es_client.search(index=self._config.index, body=query)
+        index = f"{self._config.index_prefix}*"
+        response = self._es_client.search(index=index, body=query)
+        assert len(response["hits"]["hits"]) > 0
+
         doc = response["hits"]["hits"][0]
         source = doc["_source"]
         assert "infra_env" in source["cluster"]
@@ -163,7 +168,8 @@ class TestIntegration:
         )
 
     def _is_elastic_ready(self) -> bool:
-        is_elastic_ready = self._es_client.indices.exists(index=self._config.index)
+        index = self._config.index_prefix + "*"
+        is_elastic_ready = self._es_client.indices.exists(index=index)
         if is_elastic_ready:
             return True
         return False

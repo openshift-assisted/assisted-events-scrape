@@ -53,8 +53,8 @@ objects:
               secretKeyRef:
                 key: endpoint
                 name: assisted-installer-elasticsearch
-          - name: ES_INDEX
-            value: "${ES_INDEX}"
+          - name: ES_INDEX_PREFIX
+            value: "${ES_INDEX_PREFIX}"
           - name: ES_USER
             valueFrom:
               secretKeyRef:
@@ -282,8 +282,8 @@ parameters:
   required: true
 - name: REPLICAS_COUNT
   value: "1"
-- name: ES_INDEX
-  value: 'assisted-service-events'
+- name: ES_INDEX_PREFIX
+  value: 'assisted-service-events-v3-'
 - name: OAUTH_IMAGE
   value: quay.io/openshift/origin-oauth-proxy
 - name: OAUTH_IMAGE_TAG

@@ -21,7 +21,7 @@ This tool can be used by `events_scrape` cli command (if installed) or running u
 ### Environment variables
 | Variable    |  Description   | Example    |
 | --- | --- | --- |
-| `ES_INDEX`              | Elasticsearch index name | assisted-service-events |
+| `ES_INDEX_PREFIX`       | Elasticsearch index prefix, will be suffixed by YYYY-MM | assisted-service-events-v3- |
 | `ES_SERVER`             | Elasticsearch server address |  |
 | `ES_USER`(optional)     | Elasticsearch user name | elastic |
 | `ES_PASS`(optional)     | Elasticsearch password  |  |

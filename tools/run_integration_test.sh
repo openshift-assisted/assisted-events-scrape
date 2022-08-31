@@ -12,7 +12,7 @@ else
     export AWS_S3_ENDPOINT=http://$(./tools/get_endpoint.sh ${namespace} ai-events-minio)
 fi
 
-export ES_INDEX=assisted-service-events
+export ES_INDEX_PREFIX=assisted-service-events-v3-
 export AWS_SECRET_ACCESS_KEY=$(oc -n ${namespace} get secret ai-ccx-integration -o jsonpath='{.data.aws_secret_access_key}' | base64 --decode)
 export AWS_ACCESS_KEY_ID=$(oc -n ${namespace} get secret ai-ccx-integration -o jsonpath='{.data.aws_access_key_id}' | base64 --decode)
 export AWS_S3_BUCKET=$(oc -n ${namespace} get secret ai-ccx-integration -o jsonpath='{.data.bucket}' | base64 --decode)
