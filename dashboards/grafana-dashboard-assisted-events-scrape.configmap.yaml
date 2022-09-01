@@ -34,7 +34,7 @@ data:
       "editable": true,
       "fiscalYearStartMonth": 0,
       "graphTooltip": 1,
-      "iteration": 1659948202036,
+      "iteration": 1662015625903,
       "links": [],
       "liveNow": false,
       "panels": [
@@ -693,7 +693,7 @@ data:
                 "uid": "${datasource}"
               },
               "editorMode": "code",
-              "expr": "sum(increase(elasticsearch_indices_shards_docs{primary=\"true\",namespace=\"$namespace\",index=\"assisted-service-events-v3\"}[1h]))",
+              "expr": "sum(increase(elasticsearch_indices_shards_docs{primary=\"true\",namespace=\"$namespace\",index=~\"assisted-service-events-v3.*\"}[1h]))",
               "hide": false,
               "legendFormat": "Legacy events imported in the last hour",
               "range": true,
@@ -717,7 +717,7 @@ data:
                 "uid": "${datasource}"
               },
               "editorMode": "code",
-              "expr": "increase(assisted_installer_events_max_event_id{namespace=\"$namespace\"}[1h]) / on (namespace) sum(increase(elasticsearch_indices_shards_docs{primary=\"true\",namespace=\"$namespace\",index=\"assisted-service-events-v3\"}[1h])) by (namespace)",
+              "expr": "increase(assisted_installer_events_max_event_id{namespace=\"$namespace\"}[1h]) / on (namespace) sum(increase(elasticsearch_indices_shards_docs{primary=\"true\",namespace=\"$namespace\",index=~\"assisted-service-events-v3.*\"}[1h])) by (namespace)",
               "hide": false,
               "interval": "",
               "legendFormat": "Emitted/imported ratio",
@@ -1111,6 +1111,6 @@ data:
       "timezone": "",
       "title": "Assisted Events Scrape",
       "uid": "eUOTqvP7z",
-      "version": 2,
+      "version": 3,
       "weekStart": ""
     }
