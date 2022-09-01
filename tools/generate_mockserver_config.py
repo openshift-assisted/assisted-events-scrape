@@ -38,7 +38,9 @@ def get_items(glob_pattern: str):
 fixtures_path = Path(__file__).parent.joinpath('../assisted-events-scrape/tests/integration/fixtures/')
 
 clusters = get_items('clusters-*')
-infra_envs = get_items('infra_env-*')
+infra_envs = get_items('infra_envs-*')
+
+individual_infra_envs = get_items('infra_env-*')
 
 clusters_txt = json.dumps(clusters)
 infra_envs_txt = json.dumps(infra_envs)
@@ -55,6 +57,14 @@ rules.append(get_rule(
     path="/api/assisted-install/v2/infra-envs",
     body=infra_envs_txt
 ))
+
+for infra_env in individual_infra_envs:
+    infra_env_id = infra_env["id"]
+    rule = get_rule(
+        path=f"/api/assisted-install/v2/infra-envs/{infra_env_id}",
+        body=infra_env
+    )
+    rules.append(rule)
 
 for cluster in clusters:
     cluster_id = cluster["id"]

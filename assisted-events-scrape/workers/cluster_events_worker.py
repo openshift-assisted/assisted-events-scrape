@@ -17,10 +17,8 @@ from assisted_service_client.rest import ApiException
 EVENT_CATEGORIES = ["user", "metrics"]
 
 
-@dataclass
-class ClusterData:
-    cluster: dict
-    infra_env: dict
+class ResourceNotFoundException(Exception):
+    pass
 
 
 @dataclass
@@ -42,22 +40,19 @@ class ClusterEventsWorker:
         self._config = config
         self._executor = None
         self._es_store = es_store
+        self._infra_envs = {}
 
-    def process_clusters(self, clusters: List[dict], infraenvs: List[dict]) -> None:
-        infraenvs = {item["cluster_id"] : item for item in infraenvs}
+    def process_clusters(self, clusters: List[dict]) -> None:
+        infraenvs = self._ai_client.infra_envs_list()
+        self._infra_envs = {item["id"] : item for item in infraenvs}
+
         with ThreadPoolExecutor(max_workers=self._config.max_workers) as self._executor:
             cluster_count = len(clusters)
             for cluster in clusters:
-                cluster_data = ClusterData(cluster, None)
-                cluster_id = cluster["id"]
-                if cluster_id in infraenvs:
-                    cluster_data.infra_env = infraenvs[cluster_id]
-                self._executor.submit(self.store_events_for_cluster, cluster_data)
+                self._executor.submit(self.store_events_for_cluster, cluster)
             log.info(f"Sent {cluster_count} clusters for processing...")
 
-    def store_events_for_cluster(self, cluster_data: ClusterData) -> None:
-        cluster = cluster_data.cluster
-        infra_env = cluster_data.infra_env
+    def store_events_for_cluster(self, cluster: dict) -> None:
         try:
             Anonymizer.anonymize_cluster(cluster)
             self._enrich_cluster(cluster)
@@ -66,9 +61,20 @@ class ClusterEventsWorker:
 
             events = self.__get_events(cluster["id"])
             component_versions = self.__get_versions()
+            infra_envs = []
+            try:
+                hosts_infra_envs = []
+                hosts_infra_envs = self.__get_infra_envs(
+                    [host["infra_env_id"] for host in cluster["hosts"]
+                     if host and "infra_env_id" in host and host["infra_env_id"] is not None]
+                )
+                self.__set_infra_envs(hosts_infra_envs)
+                infra_envs = self.__get_infra_envs_list()
+            except Exception as e:
+                log.warning(f"Something went wrong while retrieving infra_env: {e}")
 
-            self._store_normalized_events(component_versions, cluster, events, infra_env)
-            self.cluster_events_storage.store(component_versions, cluster, events, infra_env)
+            self._store_normalized_events(component_versions, cluster, events, infra_envs)
+            self.cluster_events_storage.store(component_versions, cluster, events, hosts_infra_envs)
             self._config.changes.set_changed()
             log.debug(f'Storing events for cluster {cluster["id"]}')
         except Exception as e:
@@ -105,11 +111,53 @@ class ClusterEventsWorker:
             default_return_value=[]
         )
 
+    def __get_infra_envs_list(self) -> List[dict]:
+        return list(self._infra_envs.values())
+
+    def __set_infra_envs(self, infra_envs: dict):
+        for key in infra_envs:
+            self._infra_envs[key] = infra_envs[key]
+
+    def __get_infra_envs(self, infra_env_ids: List[str]) -> dict:
+        infra_envs = {}
+        for infra_env_id in infra_env_ids:
+            try:
+                infra_env = self.__get_cached_infra_env(infra_env_id)
+                infra_envs[infra_env["id"]] = deepcopy(infra_env)
+            except ResourceNotFoundException as e:
+                log.exception(f"InfraEnv not found: {e}")
+
+        return infra_envs
+
+    def __get_cached_infra_env(self, infra_env_id: str) -> dict:
+        infra_env = self._infra_envs.get(infra_env_id)
+        if infra_env:
+            return infra_env
+        infra_env = self.__get_infra_env(infra_env_id)
+        if not infra_env:
+            raise ResourceNotFoundException(f"Infra env {infra_env_id} not found")
+        self._infra_envs[infra_env["id"]] = infra_env
+        return infra_env
+
+    @retry(ApiException, delay=1, tries=3, backoff=2, max_delay=4, jitter=1)
+    def __get_infra_env(self, infra_env_id: str):
+        def _internal_get_infraenv():
+            infra_env = self._ai_client.get_infra_env(infra_env_id=infra_env_id)
+            if infra_env:
+                return infra_env.to_dict()
+            return None
+
+        return handle_4XX_apiexception(
+            _internal_get_infraenv,
+            message_404=f"InfraEnv {infra_env_id} not found",
+            default_return_value=None
+        )
+
     def __handle_unexpected_error(self, e: Exception, msg: str):
         self._config.error_counter.inc()
         if self._config.sentry.enabled:
             capture_exception(e)
-        log.exception(msg)
+        log.exception(f"Unexpected error: {msg}")
 
     def shutdown(self):
         """
@@ -130,7 +178,7 @@ class ClusterEventsWorker:
             if work_item:
                 work_item.future.cancel()
 
-    def _store_normalized_events(self, component_versions, cluster, event_list, infra_env):
+    def _store_normalized_events(self, component_versions, cluster, event_list, infra_envs):
         try:
             cluster_id_filter = {
                 "term": {
@@ -138,13 +186,12 @@ class ClusterEventsWorker:
                 }
             }
 
-            if infra_env:
-                self._es_store.store_changes(
-                    index=EventStoreConfig.INFRA_ENVS_EVENTS_INDEX,
-                    documents=[infra_env],
-                    id_fn=get_dict_hash,
-                    filter_by=cluster_id_filter
-                )
+            self._es_store.store_changes(
+                index=EventStoreConfig.INFRA_ENVS_EVENTS_INDEX,
+                documents=infra_envs,
+                id_fn=get_dict_hash,
+                filter_by=cluster_id_filter
+            )
 
             self._es_store.store_changes(
                 index=EventStoreConfig.CLUSTER_EVENTS_INDEX,
@@ -189,7 +236,6 @@ class ClusterEventsWorker:
     def _enrich_cluster(self, cluster: dict):
         if "hosts" not in cluster or len(cluster["hosts"]) == 0:
             cluster["hosts"] = self.__get_hosts(cluster["id"])
-
         cluster["cluster_state_id"] = self._cluster_checksum(cluster)
 
 

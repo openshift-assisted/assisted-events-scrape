@@ -6,6 +6,7 @@ from utils import log, get_event_id
 from clients import create_es_client_from_env
 from config import ScraperConfig
 from events_scrape import InventoryClient
+from process import get_hosts_summary
 import opensearchpy
 
 from . import process
@@ -28,7 +29,7 @@ class ClusterEventsStorage:
         self._index_prefix = index_prefix
         self._cache_event_count_per_cluster = {}
 
-    def store(self, component_versions, cluster, event_list, infra_env):
+    def store(self, component_versions, cluster, event_list, infra_envs):
         cluster_id = cluster["id"]
 
         event_count = len(event_list)
@@ -36,8 +37,7 @@ class ClusterEventsStorage:
             log.info(f"Cluster {cluster_id} has {event_count} event records, logging only {MAX_EVENTS}")
             event_list = event_list[:MAX_EVENTS]
 
-        metadata = get_metadata(cluster, component_versions)
-        metadata["cluster"]["infra_env"] = infra_env
+        metadata = get_metadata(cluster, component_versions, infra_envs)
 
         cluster_metadata = process_metadata(metadata)
         event_names = get_cluster_object_names(cluster_metadata)
@@ -91,9 +91,13 @@ class ClusterEventsStorage:
 
     def get_cluster_event_count_on_es_db(self, cluster_id):
         time.sleep(1)
-        index_pattern = self._index_prefix + "*"
-        results = self._es_client.search(index=index_pattern,
-                                         body={"query": {"match_phrase": {"cluster.id": cluster_id}}})
+        try:
+            index_pattern = self._index_prefix + "*"
+            results = self._es_client.search(index=index_pattern,
+                                             body={"query": {"match_phrase": {"cluster.id": cluster_id}}})
+        except opensearchpy.NotFoundError:
+            log.warning(f"Index {self._index} not found, returning 0 found values for cluster ID {cluster_id}")
+            return 0
         return results["hits"]["total"]["value"]
 
     def log_doc(self, doc, id_):
@@ -133,5 +137,10 @@ def process_event_doc(event_data, cluster_metadata):
     cluster_metadata.update(event_data)
 
 
-def get_metadata(cluster: dict, component_versions: dict):
+def get_metadata(cluster: dict, component_versions: dict, infra_envs: dict):
+    if "hosts" in cluster:
+        for host in cluster["hosts"]:
+            if host["infra_env_id"] in infra_envs:
+                host["infra_env"] = infra_envs[host["infra_env_id"]]
+    cluster["hosts_summary"] = get_hosts_summary(cluster["hosts"])
     return {'cluster': cluster, **component_versions}
