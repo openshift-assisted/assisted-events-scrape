@@ -1,5 +1,5 @@
 [
-  {"cluster_id":"fc124c08-f3a5-464f-834e-c262d9eb5a38","event_time":"2022-03-08T12:46:43.453Z","message":"Successfully registered cluster","name":"cluster_registration_succeeded","severity":"info"},
-  {"cluster_id":"fc124c08-f3a5-464f-834e-c262d9eb5a38","event_time":"2022-03-08T12:46:49.469Z","message":"Updated status of the cluster to pending-for-input","name":"cluster_status_updated","severity":"info"},
-  {"cluster_id":"fc124c08-f3a5-464f-834e-c262d9eb5a38","event_time":"2022-03-08T12:59:40.257Z","host_id":"35b7346e-b486-46e0-b553-6e6355eb5a17","infra_env_id":"39b315e3-f9d4-4869-8927-a6d56c26c5ac","message":"Host 35b7346e-b486-46e0-b553-6e6355eb5a17: Successfully registered","name":"host_registration_succeeded","severity":"info"}
+  {"cluster_id":"fc124c08-f3a5-464f-834e-c262d9eb5a38","event_time":"2022-04-08T12:46:43.453Z","message":"Successfully registered cluster","name":"cluster_registration_succeeded","severity":"info"},
+  {"cluster_id":"fc124c08-f3a5-464f-834e-c262d9eb5a38","event_time":"2022-04-08T12:46:49.469Z","message":"Updated status of the cluster to pending-for-input","name":"cluster_status_updated","severity":"info"},
+  {"cluster_id":"fc124c08-f3a5-464f-834e-c262d9eb5a38","event_time":"2022-04-08T12:59:40.257Z","host_id":"35b7346e-b486-46e0-b553-6e6355eb5a17","infra_env_id":"39b315e3-f9d4-4869-8927-a6d56c26c5ac","message":"Host 35b7346e-b486-46e0-b553-6e6355eb5a17: Successfully registered","name":"host_registration_succeeded","severity":"info"}
 ]
