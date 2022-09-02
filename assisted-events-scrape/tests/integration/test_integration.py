@@ -114,11 +114,13 @@ class TestIntegration:
         return doc["_source"]
 
     def test_s3_uploaded_files(self):
+        expected_s3_objects_count = 6
         objects = self._s3_client.list_objects(Bucket=self._s3_bucket_name)
         # it should have one upload each event type
-        assert len(objects['Contents']) == 5
+        assert len(objects['Contents']) == expected_s3_objects_count
         assert at_least_one_matches_key(objects['Contents'], "Key", ".events/2022-03-08/.*")
-        assert at_least_one_matches_key(objects['Contents'], "Key", ".events/2022-03-09/.*")
+        assert at_least_one_matches_key(objects['Contents'], "Key", ".events/2022-03-08/.*")
+        assert at_least_one_matches_key(objects['Contents'], "Key", ".events/2022-04-08/.*")
         assert at_least_one_matches_key(objects['Contents'], "Key", ".clusters/[0-9]{4}-[0-9]{2}-[0-9]{2}/.*")
         assert at_least_one_matches_key(objects['Contents'], "Key", ".component_versions/[0-9]{4}-[0-9]{2}-[0-9]{2}/.*")
         assert at_least_one_matches_key(objects['Contents'], "Key", ".infra_envs/[0-9]{4}-[0-9]{2}-[0-9]{2}/.*")

@@ -1,7 +1,7 @@
 import re
 import time
 import json
-from datetime import datetime
+from dateutil.parser import parse as parse_date
 from utils import log, get_event_id
 from clients import create_es_client_from_env
 from config import ScraperConfig
@@ -102,7 +102,7 @@ class ClusterEventsStorage:
 
     def log_doc(self, doc, id_):
         try:
-            index = self._index_prefix + datetime.today().strftime("%Y-%m")
+            index = self._index_prefix + parse_date(doc["event_time"]).strftime("%Y-%m")
             res = self._es_client.create(index=index, body=doc, id=id_)
         except opensearchpy.exceptions.ConflictError:
             log.debug("Hit logged event")
