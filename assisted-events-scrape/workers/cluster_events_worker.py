@@ -62,8 +62,8 @@ class ClusterEventsWorker:
             events = self.__get_events(cluster["id"])
             component_versions = self.__get_versions()
             infra_envs = []
+            hosts_infra_envs = []
             try:
-                hosts_infra_envs = []
                 hosts_infra_envs = self.__get_infra_envs(
                     [host["infra_env_id"] for host in cluster["hosts"]
                      if host and "infra_env_id" in host and host["infra_env_id"] is not None]
@@ -72,6 +72,8 @@ class ClusterEventsWorker:
                 infra_envs = self.__get_infra_envs_list()
             except Exception as e:
                 log.warning(f"Something went wrong while retrieving infra_env: {e}")
+
+            _anonymize_infra_envs(hosts_infra_envs, infra_envs)
 
             self._store_normalized_events(component_versions, cluster, events, infra_envs)
             self.cluster_events_storage.store(component_versions, cluster, events, hosts_infra_envs)
@@ -237,6 +239,13 @@ class ClusterEventsWorker:
         if "hosts" not in cluster or len(cluster["hosts"]) == 0:
             cluster["hosts"] = self.__get_hosts(cluster["id"])
         cluster["cluster_state_id"] = self._cluster_checksum(cluster)
+
+
+def _anonymize_infra_envs(hosts_infra_envs, infra_envs):
+    for infra_env in hosts_infra_envs:
+        Anonymizer.anonymize_infra_env(infra_env)
+    for infra_env in infra_envs:
+        Anonymizer.anonymize_infra_env(infra_env)
 
 
 def by_id(item: dict) -> str:
