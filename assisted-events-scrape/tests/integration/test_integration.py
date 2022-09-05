@@ -143,6 +143,8 @@ class TestIntegration:
 
         assert "cpu_architecture" in random_infraenv
         assert "openshift_version" in random_infraenv
+        assert "user_name" not in random_infraenv
+        assert "user_id" in random_infraenv
 
     @classmethod
     def _get_s3_client(cls):
@@ -211,11 +213,17 @@ def assert_hosts_data(cluster):
     random_host = random.choice(cluster["hosts"])
     assert "infra_env_id" in random_host
     assert "infra_env" in random_host
-    assert "type" in random_host["infra_env"]
-    assert "id" in random_host["infra_env"]
     assert random_host["infra_env"]["id"] == random_host["infra_env_id"]
-    assert "org_id" in random_host["infra_env"]
-    assert "xxxxxxxx" == random_host["infra_env"]["org_id"]
+    assert_infra_env_data(random_host["infra_env"])
+
+
+def assert_infra_env_data(infra_env):
+    assert "type" in infra_env
+    assert "id" in infra_env
+    assert "user_name" not in infra_env
+    assert "user_id" in infra_env
+    assert "org_id" in infra_env
+    assert "xxxxxxxx" == infra_env["org_id"]
 
 
 def assert_cluster_data(cluster):
