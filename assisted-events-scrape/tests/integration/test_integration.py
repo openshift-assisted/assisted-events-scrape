@@ -253,6 +253,8 @@ def assert_host_summary_data(cluster):
     summary = cluster["hosts_summary"]
     assert "infra_env" in summary
     assert "type" in summary["infra_env"]
+    assert "openshift_version" in summary["infra_env"]
+    assert "4_10" in summary["infra_env"]["openshift_version"]
 
 
 def assert_is_multiarch(cluster):

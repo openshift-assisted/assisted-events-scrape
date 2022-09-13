@@ -8,14 +8,16 @@ class TestHostProcess:
                 "id": "foo",
                 "infra_env_id": "12345",
                 "infra_env": {
-                    "type": "minimal-iso"
+                    "type": "minimal-iso",
+                    "openshift_version": "4.8.1",
                 }
             },
             {
                 "id": "bar",
                 "infra_env_id": "12345",
                 "infra_env": {
-                    "type": "minimal-iso"
+                    "type": "minimal-iso",
+                    "openshift_version": "4.8.1",
                 }
             },
         ]
@@ -27,6 +29,10 @@ class TestHostProcess:
         assert "minimal-iso" in summary["infra_env"]["type"]
         assert summary["infra_env"]["type"]["minimal-iso"] == 1
         assert "minimal-iso" == summary["iso_type"]
+
+        assert "openshift_version" in summary["infra_env"]
+        assert "4_8_1" in summary["infra_env"]["openshift_version"]
+        assert summary["infra_env"]["openshift_version"]["4_8_1"] == 1
 
         assert_is_not_multiarch(summary)
 
