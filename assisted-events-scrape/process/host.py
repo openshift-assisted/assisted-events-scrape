@@ -50,13 +50,17 @@ def _get_summary(to_summarize, hosts):
                 if root in host and label in host[root]:
                     if label not in summary[root]:
                         summary[root][label] = {}
-                    value = host[root][label]
+                    value = _sanitize_value(host[root][label])
                     if value in summary[root][label]:
                         summary[root][label][value] += 1
                     else:
                         summary[root][label][value] = 1
     _get_relative_summary(summary)
     return summary
+
+
+def _sanitize_value(value):
+    return value.replace('.', '_')
 
 
 def _get_relative_summary(summary):
