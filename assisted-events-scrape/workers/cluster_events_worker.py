@@ -22,6 +22,10 @@ class ResourceNotFoundException(Exception):
     pass
 
 
+class ClusterBlacklistedException(Exception):
+    pass
+
+
 @dataclass
 class ClusterEventsWorkerConfig:
     max_workers: int
@@ -42,6 +46,7 @@ class ClusterEventsWorker:
         self._executor = None
         self._es_store = es_store
         self._infra_envs = {}
+        self._blacklisted_names = ["perf-test"]
 
     def process_clusters(self, clusters: List[dict]) -> None:
         infraenvs = self._ai_client.infra_envs_list()
@@ -55,6 +60,8 @@ class ClusterEventsWorker:
 
     def store_events_for_cluster(self, cluster: dict) -> None:
         try:
+            if self._is_blacklisted(cluster):
+                raise ClusterBlacklistedException(f"Cluster ID {cluster['id']} is blacklisted.")
             Anonymizer.anonymize_cluster(cluster)
             self._enrich_cluster(cluster)
 
@@ -243,6 +250,9 @@ class ClusterEventsWorker:
         cluster["cluster_state_id"] = self._cluster_checksum(cluster)
         for host in cluster["hosts"]:
             reshape_host(host)
+
+    def _is_blacklisted(self, cluster: dict) -> bool:
+        return "name" in cluster and cluster["name"] in self._blacklisted_names
 
 
 def _anonymize_infra_envs(hosts_infra_envs, infra_envs):

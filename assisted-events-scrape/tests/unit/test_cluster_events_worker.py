@@ -253,6 +253,22 @@ class TestClusterEventsWorker:
         assert 0 == self.error_counter.get_errors()
         assert self.changes.has_changed_in_last_minutes(1)
 
+    def test_blacklisted_cluster(self):
+
+        cluster = {
+            "id": "abcd", "name": "perf-test",
+            "hosts": [{"id": "1"}, {"id": "2"}, {"id": "3"}, {"notid": "4"}],
+        }
+
+        self.worker.store_events_for_cluster(cluster)
+
+        self.ai_client_mock.get_cluster_hosts.assert_not_called()
+        self.ai_client_mock.get_events.assert_not_called()
+        self.ai_client_mock.get_versions.assert_not_called()
+        self.cluster_events_storage_mock.store.assert_not_called()
+
+        assert 1 == self.error_counter.get_errors()
+
     def _expect_store_normalized_events(self, no_infraenv=False):
         expected_calls = []
 
