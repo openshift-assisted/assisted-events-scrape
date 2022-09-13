@@ -216,12 +216,6 @@ def assert_hosts_data(cluster):
     assert random_host["infra_env"]["id"] == random_host["infra_env_id"]
     assert_infra_env_data(random_host["infra_env"])
 
-    assert "host_inventory" in random_host
-    assert "inventory" not in random_host
-    assert "bmc_address" in random_host["host_inventory"]
-    assert "cpu" in random_host["host_inventory"]
-    assert "count" in random_host["host_inventory"]["cpu"]
-
 
 def assert_infra_env_data(infra_env):
     assert "type" in infra_env
