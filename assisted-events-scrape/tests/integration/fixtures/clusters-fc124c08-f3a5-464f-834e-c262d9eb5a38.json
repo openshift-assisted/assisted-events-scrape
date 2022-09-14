@@ -15,7 +15,7 @@
   "controller_logs_collected_at": "0001-01-01T00:00:00.000Z",
   "controller_logs_started_at": "0001-01-01T00:00:00.000Z",
   "cpu_architecture": "multi",
-  "created_at": "2022-03-08T12:46:43.029809Z",
+  "created_at": "2022-03-09T12:46:43.029809Z",
   "deleted_at": null,
   "disk_encryption": {
     "enable_on": "none",
@@ -32,7 +32,7 @@
   "id": "fc124c08-f3a5-464f-834e-c262d9eb5a38",
   "ignition_endpoint": {},
   "image_info": {
-    "created_at": "2022-03-08T12:46:43.029809Z",
+    "created_at": "2022-03-09T12:46:43.029809Z",
     "expires_at": "0001-01-01T00:00:00.000Z"
   },
   "ingress_vip": "192.168.133.82",
@@ -82,7 +82,7 @@
   ],
   "status": "insufficient",
   "status_info": "Cluster is not ready for install",
-  "status_updated_at": "2022-03-08T13:15:29.553Z",
+  "status_updated_at": "2022-03-09T13:15:29.553Z",
   "total_host_count": 10,
   "updated_at": "2022-03-27T11:25:07.052462Z",
   "user_managed_networking": false,

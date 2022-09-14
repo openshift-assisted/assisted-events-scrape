@@ -1,7 +1,19 @@
+import json
 
 _ATTRIBUTES_TO_SUMMARIZE = {
     "infra_env": ["type", "cpu_architecture", "openshift_version"]
 }
+
+
+def reshape_host(host):
+    if "inventory" in host:
+        try:
+            inventory = json.loads(host["inventory"])
+        except (TypeError, json.decoder.JSONDecodeError):
+            inventory = host["inventory"]
+
+        host["host_inventory"] = inventory
+        del host["inventory"]
 
 
 def get_hosts_summary(hosts):
