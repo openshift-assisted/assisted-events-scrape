@@ -8,6 +8,7 @@ import dpath.util
 from dpath.exceptions import PathNotFound
 from retry import retry
 from utils import ErrorCounter, Changes, log, get_event_id, get_dict_hash, Anonymizer
+from process import reshape_host
 from storage import ClusterEventsStorage, ElasticsearchStorage
 from events_scrape import InventoryClient
 from sentry_sdk import capture_exception
@@ -68,17 +69,9 @@ class ClusterEventsWorker:
 
             events = self.__get_events(cluster["id"])
             component_versions = self.__get_versions()
-            infra_envs = []
-            hosts_infra_envs = []
-            try:
-                hosts_infra_envs = self.__get_infra_envs(
-                    [host["infra_env_id"] for host in cluster["hosts"]
-                     if host and "infra_env_id" in host and host["infra_env_id"] is not None]
-                )
-                self.__set_infra_envs(hosts_infra_envs)
-                infra_envs = self.__get_infra_envs_list()
-            except Exception as e:
-                log.warning(f"Something went wrong while retrieving infra_env: {e}")
+
+            hosts_infra_envs = self._get_hosts_infraenvs(cluster["hosts"])
+            infra_envs = self.__get_infra_envs_list()
 
             _anonymize_infra_envs(hosts_infra_envs, infra_envs)
 
@@ -119,6 +112,15 @@ class ClusterEventsWorker:
             message_404=f"Cluster {cluster_id} not found while retrieving hosts",
             default_return_value=[]
         )
+
+    def _get_hosts_infraenvs(self, hosts):
+        hosts_infra_envs = []
+        hosts_infra_envs = self.__get_infra_envs(
+            [host["infra_env_id"] for host in hosts
+             if host and "infra_env_id" in host and host["infra_env_id"] is not None]
+        )
+        self.__set_infra_envs(hosts_infra_envs)
+        return hosts_infra_envs
 
     def __get_infra_envs_list(self) -> List[dict]:
         return list(self._infra_envs.values())
@@ -246,6 +248,8 @@ class ClusterEventsWorker:
         if "hosts" not in cluster or len(cluster["hosts"]) == 0:
             cluster["hosts"] = self.__get_hosts(cluster["id"])
         cluster["cluster_state_id"] = self._cluster_checksum(cluster)
+        for host in cluster["hosts"]:
+            reshape_host(host)
 
     def _is_blacklisted(self, cluster: dict) -> bool:
         return "name" in cluster and cluster["name"] in self._blacklisted_names
