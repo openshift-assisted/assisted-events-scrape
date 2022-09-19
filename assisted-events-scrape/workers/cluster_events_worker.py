@@ -16,6 +16,7 @@ from config import SentryConfig, EventStoreConfig
 from assisted_service_client.rest import ApiException
 
 EVENT_CATEGORIES = ["user", "metrics"]
+MAX_HOSTS_COUNT = 50
 
 
 class ResourceNotFoundException(Exception):
@@ -23,6 +24,10 @@ class ResourceNotFoundException(Exception):
 
 
 class ClusterBlacklistedException(Exception):
+    pass
+
+
+class ClusterTooLargeException(Exception):
     pass
 
 
@@ -65,6 +70,11 @@ class ClusterEventsWorker:
             Anonymizer.anonymize_cluster(cluster)
             self._enrich_cluster(cluster)
 
+            if len(cluster["hosts"]) > MAX_HOSTS_COUNT:
+                raise ClusterTooLargeException(
+                    f"Cluster ID {cluster['id']} has too many hosts ({len(cluster['hosts'])}>{MAX_HOSTS_COUNT})."
+                )
+
             log.debug(f"Storing cluster: {cluster}")
 
             events = self.__get_events(cluster["id"])
@@ -79,6 +89,8 @@ class ClusterEventsWorker:
             self.cluster_events_storage.store(component_versions, cluster, events, hosts_infra_envs)
             self._config.changes.set_changed()
             log.debug(f'Storing events for cluster {cluster["id"]}')
+        except (ClusterTooLargeException, ClusterBlacklistedException) as e:
+            log.warning(str(e))
         except Exception as e:
             self.__handle_unexpected_error(e, f'Error while processing cluster {cluster["id"]}')
 
