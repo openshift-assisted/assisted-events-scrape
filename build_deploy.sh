@@ -6,6 +6,7 @@ TAG=$(git rev-parse --short=7 HEAD)
 REPO="quay.io/app-sre/assisted-events-scrape"
 export ASSISTED_EVENTS_SCRAPE_IMAGE="${REPO}:${TAG}"
 export CONTAINER_BUILD_EXTRA_PARAMS="--no-cache"
+export DOCKER_BUILDKIT=1
 
 make build-image
 
