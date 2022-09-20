@@ -7,7 +7,7 @@ install_assisted_service_client:
 	python3 -m pip install assisted-service-client
 
 build-image:
-	$(CONTAINER_COMMAND) build $(CONTAINER_BUILD_EXTRA_PARAMS) -t $(ASSISTED_EVENTS_SCRAPE_IMAGE) .
+	DOCKER_BUILDKIT=1 $(CONTAINER_COMMAND) build $(CONTAINER_BUILD_EXTRA_PARAMS) -t $(ASSISTED_EVENTS_SCRAPE_IMAGE) .
 
 build-wheel:
 	rm -rf ./dist ./build
