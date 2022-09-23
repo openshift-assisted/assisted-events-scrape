@@ -69,6 +69,72 @@ class TestEventsExporter:
                     total_records += len(lines)
                 assert total_records == expected["total_records"]
 
+    def test_export_unpartitioned_data(self, _batches):
+        unpartitioned_stream = EventStream(
+            self._events_index,
+            DateOffsetOptions(
+                None,
+                "timestamp"
+            )
+        )
+
+        records = [
+            {"id": 1, "timestamp": "2022-01-01T00:00:00"},
+            {"id": 2, "timestamp": "2022-01-01T00:02:00"},
+        ]
+        self._es_store.store_changes(
+            self._events_index,
+            documents=records,
+            id_fn=lambda x: x["id"]
+        )
+
+        # Sync events index
+        self._es_client.indices.refresh(index=self._events_index)
+
+        self._exporter.export_stream(unpartitioned_stream)
+
+        # Sync offset index
+        self._es_client.indices.refresh(index=self._offset_index)
+
+        objects = self._get_s3_objects("2022-01-01")
+        assert len(objects) == 1
+
+        total_records = 0
+        for obj in objects:
+            body = self._get_s3_object_body(obj['Key'])
+            lines = body.rstrip().split("\n")
+            total_records += len(lines)
+        assert total_records == 2
+
+        records = [
+            {"id": 3, "timestamp": "2022-02-01T00:00:00"},
+            {"id": 4, "timestamp": "2022-02-01T00:02:00"},
+        ]
+
+        self._es_store.store_changes(
+            self._events_index,
+            documents=records,
+            id_fn=lambda x: x["id"]
+        )
+
+        # Sync events index
+        self._es_client.indices.refresh(index=self._events_index)
+
+        self._exporter.export_stream(unpartitioned_stream)
+
+        # Sync offset index
+        self._es_client.indices.refresh(index=self._offset_index)
+
+        objects = self._get_s3_objects("2022-02-01")
+        assert len(objects) == 1
+
+        total_records = 0
+        for obj in objects:
+            body = self._get_s3_object_body(obj['Key'])
+            lines = body.rstrip().split("\n")
+            total_records += len(lines)
+        assert total_records == 2
+
     @pytest.fixture
     def _batches(self):
         yield [
