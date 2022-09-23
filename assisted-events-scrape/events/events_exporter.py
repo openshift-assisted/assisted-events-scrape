@@ -69,6 +69,16 @@ class EventsExporter:
                                 query=query, request_timeout=DEFAULT_TIMEOUT)
             all_docs = chain(all_docs, docs)
 
+        # if it is unpartitioned data, but with offset
+        if offsets.size() > 0 and not stream.options.partition_key:
+            for partition, offset in offsets.getAll().items():
+                # partition should be None
+                query = self._get_query(stream, partition, offset)
+                log.debug(f"Not first time retrieving non-partitioned stream {stream.name} (query: {query})")
+                docs = helpers.scan(self._es_client, index=stream.name, size=self._config.chunk_size,
+                                    query=query, request_timeout=DEFAULT_TIMEOUT)
+                all_docs = chain(all_docs, docs)
+
         # if partitions have been used, retrieve all other partitions that have no offset stored
         if stream.options.partition_key:
             log.debug(f"Make sure all non-present partitions are also retrieved for {stream.name}")

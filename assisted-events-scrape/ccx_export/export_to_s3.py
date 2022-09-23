@@ -2,6 +2,7 @@ from config import EventExportConfig, EventStoreConfig
 from clients import create_es_client_from_env
 from events import EventStream, EventsExporter
 from storage import DateOffsetOptions, DateOffsetRepository, ObjectStorageWriter
+from utils import log
 
 
 def export_events():
@@ -43,4 +44,5 @@ def export_events():
 
     exporter = EventsExporter(cfg, es_client, writer, offset_repo)
     for stream in event_streams:
+        log.info("Exporting stream %s", stream)
         exporter.export_stream(stream)
