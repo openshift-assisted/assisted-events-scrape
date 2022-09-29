@@ -1,0 +1,56 @@
+---
+apiVersion: template.openshift.io/v1
+kind: Template
+metadata:
+  name: assisted-events-scraper-post-deploy
+objects:
+- apiVersion: batch/v1
+  kind: Job
+  metadata:
+    name: assisted-events-scraper-post-deploy-${JOBID}
+  spec:
+    backoffLimit: 5
+    template:
+      spec:
+        restartPolicy: Never
+        containers:
+          - image: quay.io/edge-infrastructure/promql-tester:${PROMQL_TESTER_TAG}
+            imagePullPolicy: Always
+            name: assisted-service-post-deploy
+            command:
+            - promql_tester
+            env:
+            - name: CONDITIONS_PATH
+              value: "/etc/config/conditions.yaml"
+            - name: PROMETHEUS_URL
+              value: ${PROMETHEUS_URL}
+            volumeMounts:
+            - name: conditions-config
+              mountPath: /etc/config/
+        volumes:
+        - name: conditions-config
+          configMap:
+            name: assisted-events-promql-tester-conditions-cfg
+- apiVersion: v1
+  kind: ConfigMap
+  metadata:
+    name: assisted-events-promql-tester-conditions-cfg
+  data:
+    conditions.yaml: |
+      conditions:
+      - expression: '((sum by(namespace) (increase(elasticsearch_indices_shards_docs{index=~"assisted-service-events-v3.*",primary="true",namespace="${TARGET_NAMESPACE}"}[5m])) > bool 0) and on(namespace) increase(assisted_installer_events_max_event_id{namespace="${TARGET_NAMESPACE}"}[5m]) > 0) or on(namespace) increase(assisted_installer_events_max_event_id{namespace="${TARGET_NAMESPACE}"}[5m]) <= bool 0'
+        for_seconds: 300
+        interval_seconds: 30
+        threshold:
+          upper: 1
+          lower: 1
+parameters:
+- name: JOBID
+  generate: expression
+  from: "[0-9a-f]{7}"
+- name: PROMQL_TESTER_TAG
+  value: "0.1.0"
+- name: PROMETHEUS_URL
+  value: "http://localhost:9090"
+- name: TARGET_NAMESPACE
+  value: "assisted-installer"
