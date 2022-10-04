@@ -38,7 +38,7 @@ objects:
   data:
     conditions.yaml: |
       conditions:
-      - expression: '((sum by(namespace) (increase(elasticsearch_indices_shards_docs{index=~"assisted-service-events-v3.*",primary="true",namespace="${TARGET_NAMESPACE}"}[5m])) > bool 0) and on(namespace) increase(assisted_installer_events_max_event_id{namespace="${TARGET_NAMESPACE}"}[5m]) > 0) or on(namespace) increase(assisted_installer_events_max_event_id{namespace="${TARGET_NAMESPACE}"}[5m]) <= bool 0'
+      - expression: '((sum by(namespace) (increase(elasticsearch_indices_shards_docs{index=~".events*",primary="true",namespace="${TARGET_NAMESPACE}"}[15m])) > bool 0) and on(namespace) increase(assisted_installer_events_max_event_id{namespace="${TARGET_NAMESPACE}"}[15m]) > 0) or on(namespace) increase(assisted_installer_events_max_event_id{namespace="${TARGET_NAMESPACE}"}[15m]) <= bool 0'
         for_seconds: 300
         interval_seconds: 30
         threshold:
