@@ -5,8 +5,7 @@ ENV VIRTUAL_ENV=/opt/venv\
 
 RUN --mount=type=tmpfs,destination=/var/cache\
     --mount=type=tmpfs,destination=/root/.cache\
-    --mount=type=cache,target=/var/cache/yum\
-    --mount=type=cache,target=/var/cache/dnf\
+    --mount=type=cache,target=/var/cache\
     --mount=type=cache,target=/root/.cache\
     dnf update -y && dnf install -y epel-release &&\
     dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo &&\
