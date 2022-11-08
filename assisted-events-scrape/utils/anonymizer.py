@@ -1,4 +1,5 @@
 import fnv
+from .logger import log
 
 
 class Anonymizer:
@@ -13,12 +14,16 @@ class Anonymizer:
     @classmethod
     def _hash_user_name(cls, resource: dict):
         """mask user name with unique generated FNV-1a 128 bit id"""
+
         if "user_name" not in resource:
             return
 
-        user_name = resource.pop("user_name")
+        try:
+            user_name = resource.pop("user_name")
+        except KeyError:
+            log.warning(f"Key error while parsing user_name: {type(resource)} {resource}")
+            return
 
-        # empty username
         if not user_name:
             resource["user_id"] = None
         else:
