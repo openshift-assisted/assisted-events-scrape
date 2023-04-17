@@ -8,6 +8,7 @@ RUN --mount=type=tmpfs,destination=/var/cache\
     --mount=type=cache,target=/var/cache\
     --mount=type=cache,target=/root/.cache\
     dnf update -y && dnf install -y epel-release &&\
+    dnf install -y 'dnf-command(config-manager)' &&\
     dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo &&\
     dnf install -y jq gcc git make podman-remote docker-ce-cli skopeo python3 python3-pip &&\
     # Upgrade pip
