@@ -17,6 +17,9 @@ updates:
       python-dependencies:
         patterns:
           - "*"
+        exclude-patterns:
+          - "opensearch-py"
+          - "kubernetes"
 
   - package-ecosystem: "docker"
     directory: "/"
