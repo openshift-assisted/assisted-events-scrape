@@ -14,9 +14,9 @@ updates:
     commit-message:
       prefix: "NO-ISSUE"
     allow:
-    - dependency-name: kubernetes
+    - dependency-name: "kubernetes"
       versions: ["18.x"]
-    - dependency-name: opensearch-py
+    - dependency-name: "opensearch-py"
       version: ["1.x"]
     groups:
       python-dependencies:
