@@ -13,11 +13,6 @@ updates:
       - "python"
     commit-message:
       prefix: "NO-ISSUE"
-    allow:
-    - name: "kubernetes"
-      versions: ["18.x"]
-    - name: "opensearch-py"
-      version: ["1.x"]
     groups:
       python-dependencies:
         patterns:
