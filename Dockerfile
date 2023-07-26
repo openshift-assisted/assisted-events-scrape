@@ -1,4 +1,4 @@
-FROM registry.access.redhat.com/ubi8/ubi-minimal:8.6
+FROM registry.access.redhat.com/ubi8/ubi-minimal:8.6-902
 
 RUN --mount=type=tmpfs,destination=/var/cache\
     --mount=type=cache,target=/var/cache/yum\
