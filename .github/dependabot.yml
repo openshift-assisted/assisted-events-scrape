@@ -15,9 +15,9 @@ updates:
       prefix: "NO-ISSUE"
     ignore:
     - dependency-name: "kubernetes"
-      versions: ["<18.21,>=18.20.0"]
+      versions: [">=18.21,<=18.20.0"]
     - dependency-name: "opensearch-py"
-      versions: ["<1.2,<=1.1.0"]
+      versions: [">=1.2,<=1.1.0"]
     groups:
       python-dependencies:
         patterns:
