@@ -25,7 +25,7 @@ setuptools.setup(
     packages=setuptools.find_packages("assisted-events-scrape"),
     package_dir={"": "assisted-events-scrape"},
     install_requires=["urllib3>=1.26.7",
-                      "elasticsearch<7.14.0",
+                      "elasticsearch<8.10.0",
                       "requests>=2.26.0",
                       "kubernetes>=18.20.0",
                       "retry>=0.9.2",
