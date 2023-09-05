@@ -95,7 +95,7 @@ class EventsExporter:
         must = []
         if offset:
             offset_range = {"range": {stream.options.order_key: {"gt": offset}}}
-            must = [offset_range]
+            must.append(offset_range)
 
         if stream.options.partition_key:
             partition_filter = {"term": {stream.options.partition_key: partition}}
