@@ -6,6 +6,8 @@ from opensearchpy import OpenSearch, helpers
 from opensearchpy.exceptions import NotFoundError, TransportError, ConnectionTimeout
 from retry import retry
 
+MAX_OFFSET_ITEMS = 10000
+
 
 @dataclass
 class DateOffsetOptions:
@@ -60,7 +62,21 @@ class DateOffsetRepository:
             resp = self._es_client.get(index=self._offset_index, id=doc_id)
             return DateOffset([resp["_source"]])
 
-        query = {"query": {"bool": {"must": [{"term": {"stream": stream}}]}}}
+        query = {
+            "query": {
+                "bool": {
+                    "must": [
+                        {"term": {"stream": stream}}
+                    ]
+                }
+            },
+            "sort": [
+                {
+                    "offset": "desc",
+                }
+            ],
+            "terminate_after": MAX_OFFSET_ITEMS,
+        }
 
         try:
             res = self._scan(index=self._offset_index, query=query)
