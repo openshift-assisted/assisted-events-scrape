@@ -1,6 +1,5 @@
 assisted-service-client~=2.1.0
 boto3~=1.22.6
-dataclasses~=0.8
 dpath~=2.0.6
 fnv~=0.2.0
 kubernetes~=18.20.0
