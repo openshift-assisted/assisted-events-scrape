@@ -13,3 +13,4 @@ smart-open[s3]~=6.1.0
 urllib3~=1.26.12
 waiting~=1.4.1
 wheel
+setuptools~=74.1.2
