@@ -8,6 +8,8 @@ objects:
   kind: Deployment
   metadata:
     name: assisted-events-scrape
+    annotations:
+      kube-linter.io/ignore-all: "This component should be deprecated soon"
   spec:
     selector:
       matchLabels:
@@ -69,6 +71,8 @@ objects:
   kind: CronJob
   metadata:
     name: ccx-export
+    annotations:
+      kube-linter.io/ignore-all: "This component should be deprecated soon"
   spec:
     suspend: ${{CCX_EXPORT_CRON_SUSPEND}}
     schedule: "${CCX_EXPORT_CRON_TIME}"

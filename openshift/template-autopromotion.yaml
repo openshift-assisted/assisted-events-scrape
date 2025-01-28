@@ -8,6 +8,8 @@ objects:
   kind: Job
   metadata:
     name: assisted-events-scraper-post-deploy-${JOBID}
+    annotations:
+      kube-linter.io/ignore-all: "This component should be deprecated soon"
   spec:
     backoffLimit: 5
     template:
